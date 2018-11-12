@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/uthng/common/golog"
+	"github.com/uthng/golog"
 )
 
 func TestSimpleLog(t *testing.T) {
