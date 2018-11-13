@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/uthng/common/utils"
 	"github.com/uthng/golog"
 )
 
@@ -74,11 +75,12 @@ func TestSimpleLog(t *testing.T) {
 			logger.Errorln("This is error log")
 
 			if logger.GetVerbosity() != golog.NONE {
-				arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
+				str := utils.StripAnsi(buf.String())
+				arr := strings.Split(str, "\n\n")
 				for idx, w := range tc.output {
-					matched, _ := regexp.MatchString(w, string(arr[idx]))
+					matched, _ := regexp.MatchString(w, arr[idx])
 					if !matched {
-						t.Errorf("\nwant:\n%s\nhave:\n%s", w, string(arr[idx]))
+						t.Errorf("\nwant:\n%s\nhave:\n%s", w, arr[idx])
 					}
 				}
 			} else {
@@ -154,9 +156,10 @@ func TestFormattedLog(t *testing.T) {
 			if logger.GetVerbosity() != golog.NONE {
 				arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
 				for idx, w := range tc.output {
-					matched, _ := regexp.MatchString(w, string(arr[idx]))
+					msg := utils.StripAnsi(string(arr[idx]))
+					matched, _ := regexp.MatchString(w, msg)
 					if !matched {
-						t.Errorf("\nwant:\n%s\nhave:\n%s", w, string(arr[idx]))
+						t.Errorf("\nwant:\n%s\nhave:\n%s", w, msg)
 					}
 				}
 			} else {

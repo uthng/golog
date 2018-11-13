@@ -6,6 +6,8 @@ import (
 	"log"
 	//"os"
 	//"fmt"
+
+	"github.com/fatih/color"
 )
 
 const (
@@ -21,12 +23,8 @@ const (
 	DEBUG
 )
 
-var levels = map[int]string{
-	ERROR: "ERROR: ",
-	WARN:  "WARN: ",
-	INFO:  "INFO: ",
-	DEBUG: "DEBUG: ",
-}
+var levels map[int]string
+var colors map[int][]color.Attribute
 
 // Logger is a wrapper of go log integrating log level
 type Logger struct {
@@ -37,8 +35,27 @@ type Logger struct {
 
 // NewLogger initializes a logger with a io writer for all log levels.
 func NewLogger(w io.Writer) *Logger {
+	color.NoColor = false
+
+	colors = make(map[int][]color.Attribute)
+	colors[ERROR] = []color.Attribute{color.FgRed}
+	colors[WARN] = []color.Attribute{color.FgYellow}
+	colors[INFO] = []color.Attribute{color.FgGreen}
+	colors[DEBUG] = []color.Attribute{color.FgWhite}
+
+	red := color.New(colors[ERROR]...).Add(color.Bold).SprintFunc()
+	yellow := color.New(colors[WARN]...).Add(color.Bold).SprintFunc()
+	green := color.New(colors[INFO]...).Add(color.Bold).SprintFunc()
+	white := color.New(colors[DEBUG]...).Add(color.Bold).SprintFunc()
+
+	levels = make(map[int]string)
+	levels[ERROR] = red("ERROR: ")
+	levels[WARN] = yellow("WARN: ")
+	levels[INFO] = green("INFO: ")
+	levels[DEBUG] = white("DEBUG: ")
+
 	return &Logger{
-		logger:  log.New(w, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile),
+		logger:  log.New(w, levels[INFO], log.Ldate|log.Ltime),
 		verbose: 3,
 	}
 }
@@ -140,7 +157,8 @@ func (l *Logger) Errorln(v ...interface{}) {
 func (l *Logger) Print(level int, v ...interface{}) {
 	if l.verbose >= level {
 		l.logger.SetPrefix(levels[level])
-		l.logger.Print(v...)
+		c := color.New(colors[level]...).SprintFunc()
+		l.logger.Print(c(v...))
 	}
 }
 
@@ -149,7 +167,8 @@ func (l *Logger) Print(level int, v ...interface{}) {
 func (l *Logger) Printf(level int, f string, v ...interface{}) {
 	if l.verbose >= level {
 		l.logger.SetPrefix(levels[level])
-		l.logger.Printf(f, v...)
+		c := color.New(colors[level]...).SprintfFunc()
+		l.logger.Printf(c(f, v...))
 	}
 }
 
@@ -158,6 +177,7 @@ func (l *Logger) Printf(level int, f string, v ...interface{}) {
 func (l *Logger) Println(level int, v ...interface{}) {
 	if l.verbose >= level {
 		l.logger.SetPrefix(levels[level])
-		l.logger.Println(v...)
+		c := color.New(colors[level]...).SprintlnFunc()
+		l.logger.Println(c(v...))
 	}
 }
