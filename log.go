@@ -37,16 +37,23 @@ var colors = map[int][]color.Attribute{
 	DEBUG: []color.Attribute{color.FgWhite},
 }
 
+type level struct {
+	*log.Logger
+	color       bool
+	colorPrefix *color.Color
+	colorText   *color.Color
+}
+
 // Logger is a wrapper of go log integrating log level
 type Logger struct {
-	loggers map[int]*log.Logger
+	levels  map[int]*level
 	verbose int // if 0, no log
 }
 
 var defaultLogger *Logger
 
 // Init a default logger with verbose = 3 and
-// output for all loggers is stdout with different colors
+// output for all levels is stdout with different colors
 func init() {
 	defaultLogger = NewLogger(os.Stdout)
 	defaultLogger.SetOutput(ERROR, os.Stderr)
@@ -58,10 +65,16 @@ func NewLogger(w io.Writer) *Logger {
 	logger := &Logger{}
 	logger.verbose = 3
 
-	logger.loggers = make(map[int]*log.Logger)
+	logger.levels = make(map[int]*level)
 	for i := ERROR; i <= DEBUG; i++ {
-		c := color.New(colors[i]...).Add(color.Bold).SprintFunc()
-		logger.loggers[i] = log.New(w, c(prefixes[i]), log.Ldate|log.Ltime)
+		colorPrefix := color.New(colors[i]...).Add(color.Bold)
+		colorText := color.New(colors[i]...)
+		logger.levels[i] = &level{
+			color:       true,
+			colorPrefix: colorPrefix,
+			colorText:   colorText,
+			Logger:      log.New(w, colorPrefix.SprintFunc()(prefixes[i]), log.Ldate|log.Ltime),
+		}
 	}
 
 	return logger
@@ -88,17 +101,33 @@ func (l *Logger) GetVerbosity() int {
 
 // SetOutput sets output destination for a specific level
 func (l *Logger) SetOutput(level int, w io.Writer) {
-	l.loggers[level].SetOutput(w)
+	l.levels[level].SetOutput(w)
 }
 
 // SetFlags sets the output flags for a specific level
 func (l *Logger) SetFlags(level int, flag int) {
-	l.loggers[level].SetFlags(flag)
+	l.levels[level].SetFlags(flag)
 }
 
 // GetFlags return the output flags of a specific level
 func (l *Logger) GetFlags(level int) int {
-	return l.loggers[level].Flags()
+	return l.levels[level].Flags()
+}
+
+// EnableLevelColor enables color for a specific level
+func (l *Logger) EnableLevelColor(level int) {
+	l.levels[level].color = true
+	cf := l.levels[level].colorPrefix
+	cf.EnableColor()
+	l.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
+}
+
+// DisableLevelColor enables color for a specific level
+func (l *Logger) DisableLevelColor(level int) {
+	l.levels[level].color = false
+	cf := l.levels[level].colorPrefix
+	cf.DisableColor()
+	l.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
 }
 
 // Debug logs with debug level
@@ -182,17 +211,34 @@ func GetVerbosity() int {
 
 // SetOutput sets output destination for a specific level
 func SetOutput(level int, w io.Writer) {
-	defaultLogger.loggers[level].SetOutput(w)
+	defaultLogger.levels[level].SetOutput(w)
 }
 
 // SetFlags sets the output flags for a specific level
 func SetFlags(level int, flag int) {
-	defaultLogger.loggers[level].SetFlags(flag)
+	defaultLogger.levels[level].SetFlags(flag)
 }
 
 // GetFlags return the output flags of a specific level
 func GetFlags(level int) int {
-	return defaultLogger.loggers[level].Flags()
+	return defaultLogger.levels[level].Flags()
+}
+
+// EnableLevelColor enables color for a specific level
+func EnableLevelColor(level int) {
+	defaultLogger.levels[level].color = true
+	cf := defaultLogger.levels[level].colorPrefix
+	cf.EnableColor()
+	defaultLogger.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
+
+}
+
+// DisableLevelColor enables color for a specific level
+func DisableLevelColor(level int) {
+	defaultLogger.levels[level].color = false
+	cf := defaultLogger.levels[level].colorPrefix
+	cf.DisableColor()
+	defaultLogger.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
 }
 
 // Debug logs with debug level
@@ -261,8 +307,14 @@ func Errorln(v ...interface{}) {
 // log message if the level >= current verbose
 func Print(l *Logger, level int, v ...interface{}) {
 	if l.verbose >= level {
-		c := color.New(colors[level]...).SprintFunc()
-		l.loggers[level].Print(c(v...))
+		ct := l.levels[level].colorText
+		if l.levels[level].color {
+			ct.EnableColor()
+		} else {
+			ct.DisableColor()
+		}
+
+		l.levels[level].Print(ct.SprintFunc()(v...))
 	}
 }
 
@@ -270,8 +322,13 @@ func Print(l *Logger, level int, v ...interface{}) {
 // log message if the level >= current verbose
 func Printf(l *Logger, level int, f string, v ...interface{}) {
 	if l.verbose >= level {
-		c := color.New(colors[level]...).SprintfFunc()
-		l.loggers[level].Printf(c(f, v...))
+		ct := l.levels[level].colorText
+		if l.levels[level].color {
+			ct.EnableColor()
+		} else {
+			ct.DisableColor()
+		}
+		l.levels[level].Printf(ct.SprintfFunc()(f, v...))
 	}
 }
 
@@ -279,7 +336,12 @@ func Printf(l *Logger, level int, f string, v ...interface{}) {
 // log message if the level >= current verbose
 func Println(l *Logger, level int, v ...interface{}) {
 	if l.verbose >= level {
-		c := color.New(colors[level]...).SprintlnFunc()
-		l.loggers[level].Println(c(v...))
+		ct := l.levels[level].colorText
+		if l.levels[level].color {
+			ct.EnableColor()
+		} else {
+			ct.DisableColor()
+		}
+		l.levels[level].Println(ct.SprintlnFunc()(v...))
 	}
 }

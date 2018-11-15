@@ -171,3 +171,74 @@ func TestFormattedLog(t *testing.T) {
 	}
 
 }
+
+func TestLogColor(t *testing.T) {
+	testCases := []struct {
+		name   string
+		level  int
+		color  bool
+		output string
+	}{
+		{
+			"Debug",
+			golog.DEBUG,
+			false,
+			`DEBUG: (.*) This is debug log$`,
+		},
+		{
+			"Info",
+			golog.INFO,
+			true,
+			`INFO: (.*) This is info log$`,
+		},
+		{
+			"Warn",
+			golog.WARN,
+			false,
+			`WARN: (.*) This is warn log$`,
+		},
+		{
+			"Error",
+			golog.ERROR,
+			true,
+			`ERROR: (.*) This is error log$`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+
+			multi := io.MultiWriter(&buf, os.Stdout)
+			logger := golog.NewLogger(multi)
+			logger.SetVerbosity(4)
+
+			if tc.color {
+				logger.EnableLevelColor(tc.level)
+			} else {
+				logger.DisableLevelColor(tc.level)
+			}
+
+			if tc.level == golog.DEBUG {
+				logger.Debugf("This is %s log", "debug")
+			} else if tc.level == golog.INFO {
+				logger.Infof("This is %s log", "info")
+			} else if tc.level == golog.WARN {
+				logger.Warnf("This is %s log", "warn")
+			} else {
+				logger.Errorf("This is %s log", "error")
+			}
+
+			b := bytes.TrimRight(buf.Bytes(), "\n\n")
+			msg := string(b)
+			if tc.color {
+				msg = utils.StripAnsi(msg)
+			}
+			matched, _ := regexp.MatchString(tc.output, msg)
+			if !matched {
+				t.Errorf("\nwant:\n%s\nhave:\n%s", tc.output, msg)
+			}
+		})
+	}
+
+}
