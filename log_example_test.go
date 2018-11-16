@@ -9,7 +9,7 @@ import (
 )
 
 func ExampleStdout() {
-	logger := golog.NewLogger(os.Stdout)
+	logger := golog.NewLogger()
 	logger.SetVerbosity(golog.DEBUG)
 
 	logger.Debugln("This is debug log")
@@ -26,8 +26,9 @@ func ExampleMultiple() {
 
 	multi := io.MultiWriter(file, os.Stdout)
 
-	logger := golog.NewLogger(multi)
+	logger := golog.NewLogger()
 	logger.SetVerbosity(golog.INFO)
+	logger.SetOutput(multi)
 
 	red1 := color.New(color.FgRed)
 	boldRed := red1.Add(color.Bold)

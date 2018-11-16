@@ -55,12 +55,12 @@ var defaultLogger *Logger
 // Init a default logger with verbose = 3 and
 // output for all levels is stdout with different colors
 func init() {
-	defaultLogger = NewLogger(os.Stdout)
-	defaultLogger.SetOutput(ERROR, os.Stderr)
+	defaultLogger = NewLogger()
 }
 
 // NewLogger returns a new instance logger
-func NewLogger(w io.Writer) *Logger {
+// By default, it uses stderr for error and stdout for other levels
+func NewLogger() *Logger {
 	color.NoColor = false
 	logger := &Logger{}
 	logger.verbose = 3
@@ -69,6 +69,10 @@ func NewLogger(w io.Writer) *Logger {
 	for i := ERROR; i <= DEBUG; i++ {
 		colorPrefix := color.New(colors[i]...).Add(color.Bold)
 		colorText := color.New(colors[i]...)
+		w := os.Stdout
+		if i == ERROR {
+			w = os.Stderr
+		}
 		logger.levels[i] = &level{
 			color:       true,
 			colorPrefix: colorPrefix,
@@ -100,7 +104,14 @@ func (l *Logger) GetVerbosity() int {
 }
 
 // SetOutput sets output destination for a specific level
-func (l *Logger) SetOutput(level int, w io.Writer) {
+func (l *Logger) SetOutput(w io.Writer) {
+	for i := ERROR; i <= DEBUG; i++ {
+		l.levels[i].SetOutput(w)
+	}
+}
+
+// SetLevelOutput sets output destination for a specific level
+func (l *Logger) SetLevelOutput(level int, w io.Writer) {
 	l.levels[level].SetOutput(w)
 }
 
@@ -224,7 +235,14 @@ func GetVerbosity() int {
 }
 
 // SetOutput sets output destination for a specific level
-func SetOutput(level int, w io.Writer) {
+func SetOutput(w io.Writer) {
+	for i := ERROR; i <= DEBUG; i++ {
+		defaultLogger.levels[i].SetOutput(w)
+	}
+}
+
+// SetLevelOutput sets output destination for a specific level
+func SetLevelOutput(level int, w io.Writer) {
 	defaultLogger.levels[level].SetOutput(w)
 }
 

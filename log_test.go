@@ -66,8 +66,9 @@ func TestSimpleLog(t *testing.T) {
 			var buf bytes.Buffer
 
 			multi := io.MultiWriter(&buf, os.Stdout)
-			logger := golog.NewLogger(multi)
+			logger := golog.NewLogger()
 			logger.SetVerbosity(tc.verbose)
+			logger.SetOutput(multi)
 
 			logger.Debugln("This is debug log")
 			logger.Infoln("This is info log")
@@ -145,8 +146,9 @@ func TestFormattedLog(t *testing.T) {
 			var buf bytes.Buffer
 
 			multi := io.MultiWriter(&buf, os.Stdout)
-			logger := golog.NewLogger(multi)
+			logger := golog.NewLogger()
 			logger.SetVerbosity(tc.verbose)
+			logger.SetOutput(multi)
 
 			logger.Debugf("This is %s log", "debug")
 			logger.Infof("This is %s log", "info")
@@ -210,8 +212,9 @@ func TestLogColor(t *testing.T) {
 			var buf bytes.Buffer
 
 			multi := io.MultiWriter(&buf, os.Stdout)
-			logger := golog.NewLogger(multi)
+			logger := golog.NewLogger()
 			logger.SetVerbosity(4)
+			logger.SetOutput(multi)
 
 			if tc.color {
 				logger.EnableLevelColor(tc.level)
@@ -276,8 +279,9 @@ func TestLogColorAll(t *testing.T) {
 			var buf bytes.Buffer
 
 			multi := io.MultiWriter(&buf, os.Stdout)
-			logger := golog.NewLogger(multi)
+			logger := golog.NewLogger()
 			logger.SetVerbosity(4)
+			logger.SetOutput(multi)
 
 			if tc.color {
 				logger.EnableColor()
@@ -300,6 +304,43 @@ func TestLogColorAll(t *testing.T) {
 				if !matched {
 					t.Errorf("\nwant:\n%s\nhave:\n%s", w, msg)
 				}
+			}
+		})
+	}
+}
+
+func TestLogDefault(t *testing.T) {
+	testCases := []struct {
+		name   string
+		output string
+	}{
+		{
+			"Error",
+			`ERROR: (.*) This is error log$`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+
+			multi := io.MultiWriter(&buf, os.Stdout)
+			logger := golog.NewLogger()
+			logger.SetVerbosity(4)
+			logger.SetLevelOutput(golog.ERROR, multi)
+
+			logger.Debugf("This is %s log", "debug")
+			logger.Infof("This is %s log", "info")
+			logger.Warnf("This is %s log", "warn")
+			logger.Errorf("This is %s log", "error")
+
+			b := bytes.TrimRight(buf.Bytes(), "\n\n")
+			msg := string(b)
+			msg = utils.StripAnsi(msg)
+
+			matched, _ := regexp.MatchString(tc.output, msg)
+			if !matched {
+				t.Errorf("\nwant:\n%s\nhave:\n%s", tc.output, msg)
 			}
 		})
 	}
