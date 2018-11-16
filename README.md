@@ -1,6 +1,5 @@
 # golog
-Simple logging library using golang log package. It uses io.Writer as output destination so it can log to stdout, stderr
-or into a file or multiple destinations at the same time using io.MultiWriter.
+Simple logging library using golang log package. It uses io.Writer as output destination so it can log to stdout, stderr or into a file or multiple destinations at the same time using io.MultiWriter. Its is inspired of `google/logger` with some personal touches.
 
 ## Documentation
 See the [Godoc](https://godoc.org/github.com/uthng/golog)
