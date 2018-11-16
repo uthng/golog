@@ -242,3 +242,66 @@ func TestLogColor(t *testing.T) {
 	}
 
 }
+
+func TestLogColorAll(t *testing.T) {
+	testCases := []struct {
+		name   string
+		color  bool
+		output []string
+	}{
+		{
+			"EnableAll",
+			true,
+			[]string{
+				`DEBUG: (.*) This is debug log$`,
+				`INFO: (.*) This is info log$`,
+				`WARN: (.*) This is warn log$`,
+				`ERROR: (.*) This is error log$`,
+			},
+		},
+		{
+			"DisableAll",
+			false,
+			[]string{
+				`DEBUG: (.*) This is debug log$`,
+				`INFO: (.*) This is info log$`,
+				`WARN: (.*) This is warn log$`,
+				`ERROR: (.*) This is error log$`,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+
+			multi := io.MultiWriter(&buf, os.Stdout)
+			logger := golog.NewLogger(multi)
+			logger.SetVerbosity(4)
+
+			if tc.color {
+				logger.EnableColor()
+			} else {
+				logger.DisableColor()
+			}
+
+			logger.Debugf("This is %s log", "debug")
+			logger.Infof("This is %s log", "info")
+			logger.Warnf("This is %s log", "warn")
+			logger.Errorf("This is %s log", "error")
+
+			arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
+			for idx, w := range tc.output {
+				msg := string(arr[idx])
+				if tc.color {
+					msg = utils.StripAnsi(msg)
+				}
+				matched, _ := regexp.MatchString(w, msg)
+				if !matched {
+					t.Errorf("\nwant:\n%s\nhave:\n%s", w, msg)
+				}
+			}
+		})
+	}
+
+}

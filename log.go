@@ -109,9 +109,23 @@ func (l *Logger) SetFlags(level int, flag int) {
 	l.levels[level].SetFlags(flag)
 }
 
-// GetFlags return the output flags of a specific level
+// GetFlags returns the output flags of a specific level
 func (l *Logger) GetFlags(level int) int {
 	return l.levels[level].Flags()
+}
+
+// EnableColor enables color for all log levels
+func (l *Logger) EnableColor() {
+	for i := ERROR; i <= DEBUG; i++ {
+		l.EnableLevelColor(i)
+	}
+}
+
+// DisableColor disables color for all log levels
+func (l *Logger) DisableColor() {
+	for i := ERROR; i <= DEBUG; i++ {
+		l.DisableLevelColor(i)
+	}
 }
 
 // EnableLevelColor enables color for a specific level
@@ -222,6 +236,20 @@ func SetFlags(level int, flag int) {
 // GetFlags return the output flags of a specific level
 func GetFlags(level int) int {
 	return defaultLogger.levels[level].Flags()
+}
+
+// EnableColor enables color for all log levels
+func EnableColor() {
+	for i := ERROR; i <= DEBUG; i++ {
+		defaultLogger.EnableLevelColor(i)
+	}
+}
+
+// DisableColor disables color for all log levels
+func DisableColor() {
+	for i := ERROR; i <= DEBUG; i++ {
+		defaultLogger.DisableLevelColor(i)
+	}
 }
 
 // EnableLevelColor enables color for a specific level
