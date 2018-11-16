@@ -115,8 +115,15 @@ func (l *Logger) SetLevelOutput(level int, w io.Writer) {
 	l.levels[level].SetOutput(w)
 }
 
-// SetFlags sets the output flags for a specific level
-func (l *Logger) SetFlags(level int, flag int) {
+// SetFlags sets the same output flags for all levels
+func (l *Logger) SetFlags(flag int) {
+	for i := ERROR; i <= DEBUG; i++ {
+		l.levels[i].SetFlags(flag)
+	}
+}
+
+// SetLevelFlags sets the output flags for a specific level
+func (l *Logger) SetLevelFlags(level int, flag int) {
 	l.levels[level].SetFlags(flag)
 }
 
@@ -246,8 +253,15 @@ func SetLevelOutput(level int, w io.Writer) {
 	defaultLogger.levels[level].SetOutput(w)
 }
 
-// SetFlags sets the output flags for a specific level
-func SetFlags(level int, flag int) {
+// SetFlags sets the same output flags for all levels
+func SetFlags(flag int) {
+	for i := ERROR; i <= DEBUG; i++ {
+		defaultLogger.levels[i].SetFlags(flag)
+	}
+}
+
+// SetLevelFlags sets the output flags for a specific level
+func SetLevelFlags(level int, flag int) {
 	defaultLogger.levels[level].SetFlags(flag)
 }
 
