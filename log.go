@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	//"fmt"
+	"sync"
 
 	"github.com/fatih/color"
 )
@@ -36,6 +37,8 @@ var colors = map[int][]color.Attribute{
 	INFO:  []color.Attribute{color.FgGreen},
 	DEBUG: []color.Attribute{color.FgWhite},
 }
+
+var mutex sync.Mutex
 
 type level struct {
 	*log.Logger
@@ -366,6 +369,9 @@ func Errorln(v ...interface{}) {
 // Print wraps Print function of go log. It only prints
 // log message if the level >= current verbose
 func Print(l *Logger, level int, v ...interface{}) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	if l.verbose >= level {
 		ct := l.levels[level].colorText
 		if l.levels[level].color {
@@ -381,6 +387,9 @@ func Print(l *Logger, level int, v ...interface{}) {
 // Printf wraps Printf function of go log. It only prints
 // log message if the level >= current verbose
 func Printf(l *Logger, level int, f string, v ...interface{}) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	if l.verbose >= level {
 		ct := l.levels[level].colorText
 		if l.levels[level].color {
@@ -395,6 +404,9 @@ func Printf(l *Logger, level int, f string, v ...interface{}) {
 // Println wraps Println function of go log. It only prints
 // log message if the level >= current verbose
 func Println(l *Logger, level int, v ...interface{}) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	if l.verbose >= level {
 		ct := l.levels[level].colorText
 		if l.levels[level].color {
