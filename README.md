@@ -2,6 +2,9 @@
 Simple logging library using golang log package. It uses io.Writer as output destination so it can log to stdout, stderr
 or into a file or multiple destinations at the same time using io.MultiWriter.
 
+## Documentation
+See the [Godoc](https://godoc.org/github.com/uthng/golog)
+
 ## Usage
 
 #### Set up a standard logger to stdout:
@@ -15,7 +18,7 @@ import (
 )
 
 function main() {
-  logger := golog.NewLogger(os.Stdout)
+  logger := golog.NewLogger()
   logger.SetVerbosity(golog.DEBUG)
 
   logger.Debugln("This is debug log")
@@ -52,8 +55,9 @@ function main() {
 
   multi := io.MultiWriter(file, os.Stdout)
 
-  logger := golog.NewLogger(multi)
+  logger := golog.NewLogger()
   logger.SetVerbosity(golog.INFO)
+  logger.SetOutput(multi)
   
   logger.Debugln("This is debug log")
   logger.Infoln("This is info log")

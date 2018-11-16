@@ -14,13 +14,15 @@ import (
 const (
 	// NONE = 0
 	NONE = iota
-	// ERROR = 1
+	// FATAL = 1
+	FATAL
+	// ERROR = 2
 	ERROR
-	// WARN = 2
+	// WARN = 3
 	WARN
-	// INFO = 3
+	// INFO = 4
 	INFO
-	// DEBUG = 4
+	// DEBUG = 5
 	DEBUG
 )
 
@@ -69,11 +71,11 @@ func NewLogger() *Logger {
 	logger.verbose = 3
 
 	logger.levels = make(map[int]*level)
-	for i := ERROR; i <= DEBUG; i++ {
+	for i := FATAL; i <= DEBUG; i++ {
 		colorPrefix := color.New(colors[i]...).Add(color.Bold)
 		colorText := color.New(colors[i]...)
 		w := os.Stdout
-		if i == ERROR {
+		if i == FATAL || i == ERROR {
 			w = os.Stderr
 		}
 		logger.levels[i] = &level{
@@ -108,7 +110,7 @@ func (l *Logger) GetVerbosity() int {
 
 // SetOutput sets output destination for a specific level
 func (l *Logger) SetOutput(w io.Writer) {
-	for i := ERROR; i <= DEBUG; i++ {
+	for i := FATAL; i <= DEBUG; i++ {
 		l.levels[i].SetOutput(w)
 	}
 }
@@ -120,7 +122,7 @@ func (l *Logger) SetLevelOutput(level int, w io.Writer) {
 
 // SetFlags sets the same output flags for all levels
 func (l *Logger) SetFlags(flag int) {
-	for i := ERROR; i <= DEBUG; i++ {
+	for i := FATAL; i <= DEBUG; i++ {
 		l.levels[i].SetFlags(flag)
 	}
 }
@@ -137,14 +139,14 @@ func (l *Logger) GetFlags(level int) int {
 
 // EnableColor enables color for all log levels
 func (l *Logger) EnableColor() {
-	for i := ERROR; i <= DEBUG; i++ {
+	for i := FATAL; i <= DEBUG; i++ {
 		l.EnableLevelColor(i)
 	}
 }
 
 // DisableColor disables color for all log levels
 func (l *Logger) DisableColor() {
-	for i := ERROR; i <= DEBUG; i++ {
+	for i := FATAL; i <= DEBUG; i++ {
 		l.DisableLevelColor(i)
 	}
 }
@@ -225,6 +227,24 @@ func (l *Logger) Errorln(v ...interface{}) {
 	Println(l, ERROR, v...)
 }
 
+// Fatal logs with Print() followed by os.Exit(1)
+func (l *Logger) Fatal(v ...interface{}) {
+	Print(l, FATAL, v...)
+	os.Exit(1)
+}
+
+// Fatalf logs with Printf() followed by os.Exit(1)
+func (l *Logger) Fatalf(f string, v ...interface{}) {
+	Printf(l, FATAL, f, v...)
+	os.Exit(1)
+}
+
+// Fatalln logs with Println() followed by os.Exit(1)
+func (l *Logger) Fatalln(v ...interface{}) {
+	Println(l, FATAL, v...)
+	os.Exit(1)
+}
+
 //////////// DEFAULT LOGGER ////////////////////////////
 
 // SetVerbosity sets log level. If verbose < NONE, it will be set to NONE.
@@ -246,7 +266,7 @@ func GetVerbosity() int {
 
 // SetOutput sets output destination for a specific level
 func SetOutput(w io.Writer) {
-	for i := ERROR; i <= DEBUG; i++ {
+	for i := FATAL; i <= DEBUG; i++ {
 		defaultLogger.levels[i].SetOutput(w)
 	}
 }
@@ -258,7 +278,7 @@ func SetLevelOutput(level int, w io.Writer) {
 
 // SetFlags sets the same output flags for all levels
 func SetFlags(flag int) {
-	for i := ERROR; i <= DEBUG; i++ {
+	for i := FATAL; i <= DEBUG; i++ {
 		defaultLogger.levels[i].SetFlags(flag)
 	}
 }
@@ -275,14 +295,14 @@ func GetFlags(level int) int {
 
 // EnableColor enables color for all log levels
 func EnableColor() {
-	for i := ERROR; i <= DEBUG; i++ {
+	for i := FATAL; i <= DEBUG; i++ {
 		defaultLogger.EnableLevelColor(i)
 	}
 }
 
 // DisableColor disables color for all log levels
 func DisableColor() {
-	for i := ERROR; i <= DEBUG; i++ {
+	for i := FATAL; i <= DEBUG; i++ {
 		defaultLogger.DisableLevelColor(i)
 	}
 }
@@ -362,6 +382,24 @@ func Errorf(f string, v ...interface{}) {
 // Errorln logs with error level
 func Errorln(v ...interface{}) {
 	Println(defaultLogger, ERROR, v...)
+}
+
+// Fatal logs with Print() followed by os.Exit(1)
+func Fatal(v ...interface{}) {
+	Print(defaultLogger, FATAL, v...)
+	os.Exit(1)
+}
+
+// Fatalf logs with Printf() followed by os.Exit(1)
+func Fatalf(f string, v ...interface{}) {
+	Printf(defaultLogger, FATAL, f, v...)
+	os.Exit(1)
+}
+
+// Fatalln logs with Println() followed by os.Exit(1)
+func Fatalln(v ...interface{}) {
+	Println(defaultLogger, FATAL, v...)
+	os.Exit(1)
 }
 
 /////////////// INTERNAL FUNCTIONS /////////////////////

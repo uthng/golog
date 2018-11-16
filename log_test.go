@@ -213,7 +213,7 @@ func TestLogColor(t *testing.T) {
 
 			multi := io.MultiWriter(&buf, os.Stdout)
 			logger := golog.NewLogger()
-			logger.SetVerbosity(4)
+			logger.SetVerbosity(5)
 			logger.SetOutput(multi)
 
 			if tc.color {
@@ -280,7 +280,7 @@ func TestLogColorAll(t *testing.T) {
 
 			multi := io.MultiWriter(&buf, os.Stdout)
 			logger := golog.NewLogger()
-			logger.SetVerbosity(4)
+			logger.SetVerbosity(5)
 			logger.SetOutput(multi)
 
 			if tc.color {
@@ -326,7 +326,7 @@ func TestLogDefault(t *testing.T) {
 
 			multi := io.MultiWriter(&buf, os.Stdout)
 			logger := golog.NewLogger()
-			logger.SetVerbosity(4)
+			logger.SetVerbosity(5)
 			logger.SetLevelOutput(golog.ERROR, multi)
 
 			logger.Debugf("This is %s log", "debug")
