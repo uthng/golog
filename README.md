@@ -18,13 +18,12 @@ import (
 )
 
 function main() {
-  logger := golog.NewLogger()
-  logger.SetVerbosity(golog.DEBUG)
+  golog.SetVerbosity(golog.DEBUG)
 
-  logger.Debugln("This is debug log")
-  logger.Infoln("This is info log")
-  logger.Warnln("This is warn log")
-  logger.Errorln("This is error log")
+  golog.Debugln("This is debug log")
+  golog.Infoln("This is info log")
+  golog.Warnln("This is warn log")
+  golog.Errorln("This is error log")
 }
 ```
 
