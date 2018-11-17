@@ -68,7 +68,7 @@ func init() {
 func NewLogger() *Logger {
 	color.NoColor = false
 	logger := &Logger{}
-	logger.verbose = 3
+	logger.verbose = 4
 
 	logger.levels = make(map[int]*level)
 	for i := FATAL; i <= DEBUG; i++ {
