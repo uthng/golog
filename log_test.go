@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/uthng/common/utils"
 	"github.com/uthng/golog"
+	utils "github.com/uthng/goutils"
 )
 
 func TestSimpleLog(t *testing.T) {
