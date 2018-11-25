@@ -26,6 +26,15 @@ const (
 	DEBUG
 )
 
+const (
+	// PRINT = 0
+	PRINT = iota
+	// PRINTF = 1
+	PRINTF
+	// PRINTLN = 2
+	PRINTLN
+)
+
 var prefixes = map[int]string{
 	ERROR: "ERROR: ",
 	WARN:  "WARN: ",
@@ -41,6 +50,7 @@ var colors = map[int][]color.Attribute{
 }
 
 var mutex sync.Mutex
+var wg sync.WaitGroup
 
 type level struct {
 	*log.Logger
@@ -169,79 +179,79 @@ func (l *Logger) DisableLevelColor(level int) {
 
 // Debug logs with debug level
 func (l *Logger) Debug(v ...interface{}) {
-	Print(l, DEBUG, v...)
+	Log(PRINT, l, DEBUG, "", v...)
 }
 
 // Debugf logs with debug level
 func (l *Logger) Debugf(f string, v ...interface{}) {
-	Printf(l, DEBUG, f, v...)
+	Log(PRINTF, l, DEBUG, f, v...)
 }
 
 // Debugln logs with debug level
 func (l *Logger) Debugln(v ...interface{}) {
-	Println(l, DEBUG, v...)
+	Log(PRINTLN, l, DEBUG, "", v...)
 }
 
 // Info logs with info level
 func (l *Logger) Info(v ...interface{}) {
-	Print(l, INFO, v...)
+	Log(PRINT, l, INFO, "", v...)
 }
 
 // Infof logs with info level
 func (l *Logger) Infof(f string, v ...interface{}) {
-	Printf(l, INFO, f, v...)
+	Log(PRINTF, l, INFO, f, v...)
 }
 
 // Infoln logs with info level
 func (l *Logger) Infoln(v ...interface{}) {
-	Println(l, INFO, v...)
+	Log(PRINTLN, l, INFO, "", v...)
 }
 
 // Warn logs with warn level
 func (l *Logger) Warn(v ...interface{}) {
-	Print(l, WARN, v...)
+	Log(PRINT, l, WARN, "", v...)
 }
 
 // Warnf logs with warn level
 func (l *Logger) Warnf(f string, v ...interface{}) {
-	Printf(l, WARN, f, v...)
+	Log(PRINTF, l, WARN, f, v...)
 }
 
 // Warnln logs with warn level
 func (l *Logger) Warnln(v ...interface{}) {
-	Println(l, WARN, v...)
+	Log(PRINTLN, l, WARN, "", v...)
 }
 
 // Error logs with error level
 func (l *Logger) Error(v ...interface{}) {
-	Print(l, ERROR, v...)
+	Log(PRINT, l, ERROR, "", v...)
 }
 
 // Errorf logs with error level
 func (l *Logger) Errorf(f string, v ...interface{}) {
-	Printf(l, ERROR, f, v...)
+	Log(PRINTF, l, ERROR, f, v...)
 }
 
 // Errorln logs with error level
 func (l *Logger) Errorln(v ...interface{}) {
-	Println(l, ERROR, v...)
+	Log(PRINTLN, l, ERROR, "", v...)
 }
 
 // Fatal logs with Print() followed by os.Exit(1)
 func (l *Logger) Fatal(v ...interface{}) {
-	Print(l, FATAL, v...)
+	Log(PRINT, l, FATAL, "", v...)
 	os.Exit(1)
 }
 
 // Fatalf logs with Printf() followed by os.Exit(1)
 func (l *Logger) Fatalf(f string, v ...interface{}) {
-	Printf(l, FATAL, f, v...)
+	Log(PRINTF, l, FATAL, f, v...)
 	os.Exit(1)
 }
 
 // Fatalln logs with Println() followed by os.Exit(1)
 func (l *Logger) Fatalln(v ...interface{}) {
-	Println(l, FATAL, v...)
+	Log(PRINTLN, l, FATAL, "", v...)
 	os.Exit(1)
 }
 
@@ -326,87 +336,108 @@ func DisableLevelColor(level int) {
 
 // Debug logs with debug level
 func Debug(v ...interface{}) {
-	Print(defaultLogger, DEBUG, v...)
+	Log(PRINT, defaultLogger, DEBUG, "", v...)
 }
 
 // Debugf logs with debug level
 func Debugf(f string, v ...interface{}) {
-	Printf(defaultLogger, DEBUG, f, v...)
+	Log(PRINTF, defaultLogger, DEBUG, f, v...)
 }
 
 // Debugln logs with debug level
 func Debugln(v ...interface{}) {
-	Println(defaultLogger, DEBUG, v...)
+	Log(PRINTLN, defaultLogger, DEBUG, "", v...)
 }
 
 // Info logs with info level
 func Info(v ...interface{}) {
-	Print(defaultLogger, INFO, v...)
+	Log(PRINT, defaultLogger, INFO, "", v...)
 }
 
 // Infof logs with info level
 func Infof(f string, v ...interface{}) {
-	Printf(defaultLogger, INFO, f, v...)
+	Log(PRINTF, defaultLogger, INFO, f, v...)
 }
 
 // Infoln logs with info level
 func Infoln(v ...interface{}) {
-	Println(defaultLogger, INFO, v...)
+	Log(PRINTLN, defaultLogger, INFO, "", v...)
 }
 
 // Warn logs with warn level
 func Warn(v ...interface{}) {
-	Print(defaultLogger, WARN, v...)
+	Log(PRINT, defaultLogger, WARN, "", v...)
 }
 
 // Warnf logs with warn level
 func Warnf(f string, v ...interface{}) {
-	Printf(defaultLogger, WARN, f, v...)
+	Log(PRINTF, defaultLogger, WARN, f, v...)
 }
 
 // Warnln logs with warn level
 func Warnln(v ...interface{}) {
-	Println(defaultLogger, WARN, v...)
+	Log(PRINTLN, defaultLogger, WARN, "", v...)
 }
 
 // Error logs with error level
 func Error(v ...interface{}) {
-	Print(defaultLogger, ERROR, v...)
+	Log(PRINT, defaultLogger, ERROR, "", v...)
 }
 
 // Errorf logs with error level
 func Errorf(f string, v ...interface{}) {
-	Printf(defaultLogger, ERROR, f, v...)
+	Log(PRINTF, defaultLogger, ERROR, f, v...)
 }
 
 // Errorln logs with error level
 func Errorln(v ...interface{}) {
-	Println(defaultLogger, ERROR, v...)
+	Log(PRINTLN, defaultLogger, ERROR, "", v...)
 }
 
 // Fatal logs with Print() followed by os.Exit(1)
 func Fatal(v ...interface{}) {
-	Print(defaultLogger, FATAL, v...)
+	Log(PRINT, defaultLogger, FATAL, "", v...)
 	os.Exit(1)
 }
 
 // Fatalf logs with Printf() followed by os.Exit(1)
 func Fatalf(f string, v ...interface{}) {
-	Printf(defaultLogger, FATAL, f, v...)
+	Log(PRINTF, defaultLogger, FATAL, f, v...)
 	os.Exit(1)
 }
 
 // Fatalln logs with Println() followed by os.Exit(1)
 func Fatalln(v ...interface{}) {
-	Println(defaultLogger, FATAL, v...)
+	Log(PRINTLN, defaultLogger, FATAL, "", v...)
 	os.Exit(1)
 }
 
 /////////////// INTERNAL FUNCTIONS /////////////////////
 
-// Print wraps Print function of go log. It only prints
+// Log wraps print function but using goroutine and waitgroup
+// to have a synchronization of logs.
+func Log(p int, l *Logger, level int, f string, v ...interface{}) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		switch p {
+		case PRINT:
+			print(l, level, v...)
+		case PRINTF:
+			printf(l, level, f, v...)
+		case PRINTLN:
+			println(l, level, v...)
+		default:
+			println(l, level, v...)
+		}
+	}()
+
+	wg.Wait()
+}
+
+// print wraps print function of go log. It only prints
 // log message if the level >= current verbose
-func Print(l *Logger, level int, v ...interface{}) {
+func print(l *Logger, level int, v ...interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -422,9 +453,9 @@ func Print(l *Logger, level int, v ...interface{}) {
 	}
 }
 
-// Printf wraps Printf function of go log. It only prints
+// printf wraps printf function of go log. It only prints
 // log message if the level >= current verbose
-func Printf(l *Logger, level int, f string, v ...interface{}) {
+func printf(l *Logger, level int, f string, v ...interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -439,9 +470,9 @@ func Printf(l *Logger, level int, f string, v ...interface{}) {
 	}
 }
 
-// Println wraps Println function of go log. It only prints
+// println wraps println function of go log. It only prints
 // log message if the level >= current verbose
-func Println(l *Logger, level int, v ...interface{}) {
+func println(l *Logger, level int, v ...interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
