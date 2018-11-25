@@ -490,11 +490,17 @@ func println(l *Logger, level int, v ...interface{}) {
 }
 
 func getCallingFunctionName() string {
-	pc := make([]uintptr, 10) // at least 1 entry needed
-	runtime.Callers(1, pc)
-	f := runtime.FuncForPC(pc[0])
-	file, line := f.FileLine(pc[0])
-	fmt.Println(file, line, f.Name())
-	str := file + "|" + string(line) + "|" + f.Name()
+	var str string
+	//pc := make([]uintptr, 10) // at least 1 entry needed
+	//runtime.Callers(1, pc)
+	//f := runtime.FuncForPC(pc[0])
+	//file, line := f.FileLine(pc[0])
+	//fmt.Println(file, line, f.Name())
+	//str := file + "|" + string(line) + "|" + f.Name()
+	if pc, file, line, ok := runtime.Caller(3); ok {
+		funcName := runtime.FuncForPC(pc).Name() //return str
+		str = fmt.Sprintf("%s:%v:%s", file, line, funcName)
+	}
+
 	return str
 }
