@@ -3,9 +3,10 @@ package golog
 import (
 	"io"
 	//"io/ioutil"
+	"fmt"
 	"log"
 	"os"
-	//"fmt"
+	"runtime"
 	"sync"
 
 	"github.com/fatih/color"
@@ -484,5 +485,16 @@ func println(l *Logger, level int, v ...interface{}) {
 			ct.DisableColor()
 		}
 		l.levels[level].Println(ct.SprintlnFunc()(v...))
+		log.Println("caller", getCallingFunctionName())
 	}
+}
+
+func getCallingFunctionName() string {
+	pc := make([]uintptr, 10) // at least 1 entry needed
+	runtime.Callers(2, pc)
+	f := runtime.FuncForPC(pc[0])
+	file, line := f.FileLine(pc[0])
+	fmt.Println(file, line, f.Name())
+	str := file + "|" + string(line) + "|" + f.Name()
+	return str
 }
