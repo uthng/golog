@@ -491,7 +491,7 @@ func println(l *Logger, level int, v ...interface{}) {
 
 func getCallingFunctionName() string {
 	pc := make([]uintptr, 10) // at least 1 entry needed
-	runtime.Callers(3, pc)
+	runtime.Callers(2, pc)
 	log.Println("pc", pc)
 	f := runtime.FuncForPC(pc[1])
 	file, line := f.FileLine(pc[0])
