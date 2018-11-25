@@ -433,6 +433,7 @@ func Log(p int, l *Logger, level int, f string, v ...interface{}) {
 		}
 	}()
 
+	log.Println("caller", getCallingFunctionName())
 	wg.Wait()
 }
 
@@ -485,14 +486,14 @@ func println(l *Logger, level int, v ...interface{}) {
 			ct.DisableColor()
 		}
 		l.levels[level].Println(ct.SprintlnFunc()(v...))
-		log.Println("caller", getCallingFunctionName())
 	}
 }
 
 func getCallingFunctionName() string {
 	pc := make([]uintptr, 10) // at least 1 entry needed
-	runtime.Callers(7, pc)
-	f := runtime.FuncForPC(pc[0])
+	runtime.Callers(3, pc)
+	log.Println("pc", pc)
+	f := runtime.FuncForPC(pc[1])
 	file, line := f.FileLine(pc[0])
 	fmt.Println(file, line, f.Name())
 	str := file + "|" + string(line) + "|" + f.Name()
