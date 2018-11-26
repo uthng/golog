@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	//"reflect"
-	//"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -343,6 +342,40 @@ func TestLogDefault(t *testing.T) {
 				t.Errorf("\nwant:\n%s\nhave:\n%s", tc.output, msg)
 			}
 		})
+	}
+
+}
+
+func TestLogCaller(t *testing.T) {
+	var buf bytes.Buffer
+
+	output := []string{
+		`DEBUG: (.*) log_test.go:366:TestLogCaller This is debug log$`,
+		`INFO: (.*) log_test.go:367:TestLogCaller This is info log$`,
+		`WARN: (.*) log_test.go:368:TestLogCaller This is warn log$`,
+		`ERROR: (.*) log_test.go:369:TestLogCaller This is error log$`,
+	}
+
+	multi := io.MultiWriter(&buf, os.Stdout)
+	logger := golog.NewLogger()
+	logger.SetOutput(multi)
+	logger.SetVerbosity(5)
+	logger.EnableCaller(true)
+
+	logger.Debugf("This is %s log", "debug")
+	logger.Infof("This is %s log", "info")
+	logger.Warnf("This is %s log", "warn")
+	logger.Errorf("This is %s log", "error")
+
+	arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
+	for idx, w := range output {
+		msg := string(arr[idx])
+		msg = utils.StripAnsi(msg)
+
+		matched, _ := regexp.MatchString(w, msg)
+		if !matched {
+			t.Errorf("\nwant:\n%s\nhave:\n%s", w, msg)
+		}
 	}
 
 }

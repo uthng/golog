@@ -3,9 +3,12 @@ package golog
 import (
 	"io"
 	//"io/ioutil"
+	"fmt"
 	"log"
 	"os"
-	//"fmt"
+	"path"
+	"runtime"
+	"strings"
 	"sync"
 
 	"github.com/fatih/color"
@@ -63,6 +66,7 @@ type level struct {
 type Logger struct {
 	levels  map[int]*level
 	verbose int // if 0, no log
+	caller  bool
 }
 
 var defaultLogger *Logger
@@ -79,6 +83,7 @@ func NewLogger() *Logger {
 	color.NoColor = false
 	logger := &Logger{}
 	logger.verbose = 4
+	logger.caller = false
 
 	logger.levels = make(map[int]*level)
 	for i := FATAL; i <= DEBUG; i++ {
@@ -145,6 +150,11 @@ func (l *Logger) SetLevelFlags(level int, flag int) {
 // GetFlags returns the output flags of a specific level
 func (l *Logger) GetFlags(level int) int {
 	return l.levels[level].Flags()
+}
+
+// EnableCaller enables/disables caller infos for all log levels
+func (l *Logger) EnableCaller(enabled bool) {
+	l.caller = enabled
 }
 
 // EnableColor enables color for all log levels
@@ -303,6 +313,11 @@ func GetFlags(level int) int {
 	return defaultLogger.levels[level].Flags()
 }
 
+// EnableCaller enables/disables caller infos for all log levels
+func EnableCaller(enabled bool) {
+	defaultLogger.caller = enabled
+}
+
 // EnableColor enables color for all log levels
 func EnableColor() {
 	for i := FATAL; i <= DEBUG; i++ {
@@ -418,26 +433,26 @@ func Fatalln(v ...interface{}) {
 // to have a synchronization of logs.
 func Log(p int, l *Logger, level int, f string, v ...interface{}) {
 	wg.Add(1)
-	go func() {
+	caller := getInfoCaller()
+	go func(c string) {
 		defer wg.Done()
 		switch p {
 		case PRINT:
-			print(l, level, v...)
+			print(l, level, c, v...)
 		case PRINTF:
-			printf(l, level, f, v...)
+			printf(l, level, c, f, v...)
 		case PRINTLN:
-			println(l, level, v...)
+			println(l, level, c, v...)
 		default:
-			println(l, level, v...)
+			println(l, level, c, v...)
 		}
-	}()
-
+	}(caller)
 	wg.Wait()
 }
 
 // print wraps print function of go log. It only prints
 // log message if the level >= current verbose
-func print(l *Logger, level int, v ...interface{}) {
+func print(l *Logger, level int, caller string, v ...interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -448,14 +463,17 @@ func print(l *Logger, level int, v ...interface{}) {
 		} else {
 			ct.DisableColor()
 		}
-
-		l.levels[level].Print(ct.SprintFunc()(v...))
+		if l.caller {
+			l.levels[level].Print(caller, " ", ct.SprintFunc()(v...))
+		} else {
+			l.levels[level].Print(ct.SprintFunc()(v...))
+		}
 	}
 }
 
 // printf wraps printf function of go log. It only prints
 // log message if the level >= current verbose
-func printf(l *Logger, level int, f string, v ...interface{}) {
+func printf(l *Logger, level int, caller string, f string, v ...interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -466,13 +484,17 @@ func printf(l *Logger, level int, f string, v ...interface{}) {
 		} else {
 			ct.DisableColor()
 		}
-		l.levels[level].Printf(ct.SprintfFunc()(f, v...))
+		if l.caller {
+			l.levels[level].Printf("%s %s", caller, ct.SprintfFunc()(f, v...))
+		} else {
+			l.levels[level].Printf(ct.SprintfFunc()(f, v...))
+		}
 	}
 }
 
 // println wraps println function of go log. It only prints
 // log message if the level >= current verbose
-func println(l *Logger, level int, v ...interface{}) {
+func println(l *Logger, level int, caller string, v ...interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -483,6 +505,21 @@ func println(l *Logger, level int, v ...interface{}) {
 		} else {
 			ct.DisableColor()
 		}
-		l.levels[level].Println(ct.SprintlnFunc()(v...))
+		if l.caller {
+			l.levels[level].Println(caller, ct.SprintlnFunc()(v...))
+		} else {
+			l.levels[level].Println(ct.SprintlnFunc()(v...))
+		}
 	}
+}
+
+func getInfoCaller() string {
+	if pc, file, line, ok := runtime.Caller(3); ok {
+		fn := runtime.FuncForPC(pc).Name()
+		arr := strings.Split(path.Base(fn), ".")
+		str := fmt.Sprintf("%s:%d:%s", path.Base(file), line, arr[len(arr)-1])
+		return str
+	}
+
+	return ""
 }
