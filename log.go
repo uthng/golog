@@ -304,7 +304,6 @@ func EnableLevelColor(level int) {
 	defaultLogger.levels[level].color = true
 	cf := defaultLogger.levels[level].colorPrefix
 	cf.EnableColor()
-	//defaultLogger.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
 
 }
 
@@ -313,7 +312,6 @@ func DisableLevelColor(level int) {
 	defaultLogger.levels[level].color = false
 	cf := defaultLogger.levels[level].colorPrefix
 	cf.DisableColor()
-	//defaultLogger.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
 }
 
 // Debug logs with debug level
