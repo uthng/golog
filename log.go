@@ -4,12 +4,13 @@ import (
 	"io"
 	//"io/ioutil"
 	"fmt"
-	"log"
+	//"log"
 	"os"
 	"path"
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fatih/color"
 )
@@ -39,10 +40,10 @@ const (
 )
 
 var prefixes = map[int]string{
-	ERROR: "ERROR: ",
-	WARN:  "WARN: ",
-	INFO:  "INFO: ",
-	DEBUG: "DEBUG: ",
+	ERROR: "ERROR:",
+	WARN:  "WARN:",
+	INFO:  "INFO:",
+	DEBUG: "DEBUG:",
 }
 
 var colors = map[int][]color.Attribute{
@@ -56,7 +57,7 @@ var mutex sync.Mutex
 var wg sync.WaitGroup
 
 type level struct {
-	*log.Logger
+	output      io.Writer
 	color       bool
 	colorPrefix *color.Color
 	colorText   *color.Color
@@ -97,7 +98,7 @@ func NewLogger() *Logger {
 			color:       true,
 			colorPrefix: colorPrefix,
 			colorText:   colorText,
-			Logger:      log.New(w, colorPrefix.SprintFunc()(prefixes[i]), log.Ldate|log.Ltime),
+			output:      w,
 		}
 	}
 
@@ -126,30 +127,13 @@ func (l *Logger) GetVerbosity() int {
 // SetOutput sets output destination for a specific level
 func (l *Logger) SetOutput(w io.Writer) {
 	for i := FATAL; i <= DEBUG; i++ {
-		l.levels[i].SetOutput(w)
+		l.levels[i].output = w
 	}
 }
 
 // SetLevelOutput sets output destination for a specific level
 func (l *Logger) SetLevelOutput(level int, w io.Writer) {
-	l.levels[level].SetOutput(w)
-}
-
-// SetFlags sets the same output flags for all levels
-func (l *Logger) SetFlags(flag int) {
-	for i := FATAL; i <= DEBUG; i++ {
-		l.levels[i].SetFlags(flag)
-	}
-}
-
-// SetLevelFlags sets the output flags for a specific level
-func (l *Logger) SetLevelFlags(level int, flag int) {
-	l.levels[level].SetFlags(flag)
-}
-
-// GetFlags returns the output flags of a specific level
-func (l *Logger) GetFlags(level int) int {
-	return l.levels[level].Flags()
+	l.levels[level].output = w
 }
 
 // EnableCaller enables/disables caller infos for all log levels
@@ -176,7 +160,7 @@ func (l *Logger) EnableLevelColor(level int) {
 	l.levels[level].color = true
 	cf := l.levels[level].colorPrefix
 	cf.EnableColor()
-	l.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
+	//l.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
 }
 
 // DisableLevelColor enables color for a specific level
@@ -184,7 +168,7 @@ func (l *Logger) DisableLevelColor(level int) {
 	l.levels[level].color = false
 	cf := l.levels[level].colorPrefix
 	cf.DisableColor()
-	l.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
+	//l.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
 }
 
 // Debug logs with debug level
@@ -287,30 +271,13 @@ func GetVerbosity() int {
 // SetOutput sets output destination for a specific level
 func SetOutput(w io.Writer) {
 	for i := FATAL; i <= DEBUG; i++ {
-		defaultLogger.levels[i].SetOutput(w)
+		defaultLogger.levels[i].output = w
 	}
 }
 
 // SetLevelOutput sets output destination for a specific level
 func SetLevelOutput(level int, w io.Writer) {
-	defaultLogger.levels[level].SetOutput(w)
-}
-
-// SetFlags sets the same output flags for all levels
-func SetFlags(flag int) {
-	for i := FATAL; i <= DEBUG; i++ {
-		defaultLogger.levels[i].SetFlags(flag)
-	}
-}
-
-// SetLevelFlags sets the output flags for a specific level
-func SetLevelFlags(level int, flag int) {
-	defaultLogger.levels[level].SetFlags(flag)
-}
-
-// GetFlags return the output flags of a specific level
-func GetFlags(level int) int {
-	return defaultLogger.levels[level].Flags()
+	defaultLogger.levels[level].output = w
 }
 
 // EnableCaller enables/disables caller infos for all log levels
@@ -337,7 +304,7 @@ func EnableLevelColor(level int) {
 	defaultLogger.levels[level].color = true
 	cf := defaultLogger.levels[level].colorPrefix
 	cf.EnableColor()
-	defaultLogger.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
+	//defaultLogger.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
 
 }
 
@@ -346,7 +313,7 @@ func DisableLevelColor(level int) {
 	defaultLogger.levels[level].color = false
 	cf := defaultLogger.levels[level].colorPrefix
 	cf.DisableColor()
-	defaultLogger.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
+	//defaultLogger.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
 }
 
 // Debug logs with debug level
@@ -436,79 +403,44 @@ func Log(p int, l *Logger, level int, f string, v ...interface{}) {
 	caller := getInfoCaller()
 	go func(c string) {
 		defer wg.Done()
-		switch p {
-		case PRINT:
-			print(l, level, c, v...)
-		case PRINTF:
-			printf(l, level, c, f, v...)
-		case PRINTLN:
-			println(l, level, c, v...)
-		default:
-			println(l, level, c, v...)
-		}
+		printMsg(p, l, level, caller, f, v...)
 	}(caller)
 	wg.Wait()
 }
 
-// print wraps print function of go log. It only prints
-// log message if the level >= current verbose
-func print(l *Logger, level int, caller string, v ...interface{}) {
+func printMsg(p int, l *Logger, level int, caller string, f string, v ...interface{}) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	if l.verbose >= level {
-		ct := l.levels[level].colorText
-		if l.levels[level].color {
-			ct.EnableColor()
-		} else {
-			ct.DisableColor()
-		}
-		if l.caller {
-			l.levels[level].Print(caller, " ", ct.SprintFunc()(v...))
-		} else {
-			l.levels[level].Print(ct.SprintFunc()(v...))
-		}
-	}
-}
-
-// printf wraps printf function of go log. It only prints
-// log message if the level >= current verbose
-func printf(l *Logger, level int, caller string, f string, v ...interface{}) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	var prefix string
 
 	if l.verbose >= level {
 		ct := l.levels[level].colorText
+		cf := l.levels[level].colorPrefix
+
 		if l.levels[level].color {
 			ct.EnableColor()
+			cf.EnableColor()
 		} else {
 			ct.DisableColor()
+			cf.DisableColor()
 		}
-		if l.caller {
-			l.levels[level].Printf("%s %s", caller, ct.SprintfFunc()(f, v...))
-		} else {
-			l.levels[level].Printf(ct.SprintfFunc()(f, v...))
-		}
-	}
-}
 
-// println wraps println function of go log. It only prints
-// log message if the level >= current verbose
-func println(l *Logger, level int, caller string, v ...interface{}) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	if l.verbose >= level {
-		ct := l.levels[level].colorText
-		if l.levels[level].color {
-			ct.EnableColor()
-		} else {
-			ct.DisableColor()
-		}
 		if l.caller {
-			l.levels[level].Println(caller, ct.SprintlnFunc()(v...))
+			prefix = fmt.Sprintf("%s %s %s", getTimeNow(), caller, cf.SprintFunc()(prefixes[level]))
 		} else {
-			l.levels[level].Println(ct.SprintlnFunc()(v...))
+			prefix = fmt.Sprintf("%s %s", getTimeNow(), cf.SprintFunc()(prefixes[level]))
+		}
+
+		switch p {
+		case PRINT:
+			fmt.Fprint(l.levels[level].output, prefix, " ", ct.SprintFunc()(v...))
+		case PRINTF:
+			fmt.Fprintf(l.levels[level].output, "%s %s", prefix, ct.SprintfFunc()(f, v...))
+		case PRINTLN:
+			fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
+		default:
+			fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
 		}
 	}
 }
@@ -522,4 +454,8 @@ func getInfoCaller() string {
 	}
 
 	return ""
+}
+
+func getTimeNow() string {
+	return time.Now().Format(time.RFC3339Nano)
 }
