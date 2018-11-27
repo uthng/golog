@@ -23,34 +23,34 @@ func TestSimpleLog(t *testing.T) {
 			"Debug",
 			golog.DEBUG,
 			[]string{
-				`DEBUG: (.*) This is debug log$`,
-				`INFO: (.*) This is info log$`,
-				`WARN: (.*) This is warn log$`,
-				`ERROR: (.*) This is error log$`,
+				`(.*) DEBUG: This is debug log$`,
+				`(.*) INFO: This is info log$`,
+				`(.*) WARN: This is warn log$`,
+				`(.*) ERROR: This is error log$`,
 			},
 		},
 		{
 			"Info",
 			golog.INFO,
 			[]string{
-				`INFO: (.*) This is info log$`,
-				`WARN: (.*) This is warn log$`,
-				`ERROR: (.*) This is error log$`,
+				`(.*) INFO: This is info log$`,
+				`(.*) WARN: This is warn log$`,
+				`(.*) ERROR: This is error log$`,
 			},
 		},
 		{
 			"Warn",
 			golog.WARN,
 			[]string{
-				`WARN: (.*) This is warn log$`,
-				`ERROR: (.*) This is error log$`,
+				`(.*) WARN: This is warn log$`,
+				`(.*) ERROR: This is error log$`,
 			},
 		},
 		{
 			"Error",
 			golog.ERROR,
 			[]string{
-				`ERROR: (.*) This is error log$`,
+				`(.*) ERROR: This is error log$`,
 			},
 		},
 		{
@@ -103,34 +103,34 @@ func TestFormattedLog(t *testing.T) {
 			"Debug",
 			golog.DEBUG,
 			[]string{
-				`DEBUG: (.*) This is debug log$`,
-				`INFO: (.*) This is info log$`,
-				`WARN: (.*) This is warn log$`,
-				`ERROR: (.*) This is error log$`,
+				`(.*) DEBUG: This is debug log$`,
+				`(.*) INFO: This is info log$`,
+				`(.*) WARN: This is warn log$`,
+				`(.*) ERROR: This is error log$`,
 			},
 		},
 		{
 			"Info",
 			golog.INFO,
 			[]string{
-				`INFO: (.*) This is info log$`,
-				`WARN: (.*) This is warn log$`,
-				`ERROR: (.*) This is error log$`,
+				`(.*) INFO: This is info log$`,
+				`(.*) WARN: This is warn log$`,
+				`(.*) ERROR: This is error log$`,
 			},
 		},
 		{
 			"Warn",
 			golog.WARN,
 			[]string{
-				`WARN: (.*) This is warn log$`,
-				`ERROR: (.*) This is error log$`,
+				`(.*) WARN: This is warn log$`,
+				`(.*) ERROR: This is error log$`,
 			},
 		},
 		{
 			"Error",
 			golog.ERROR,
 			[]string{
-				`ERROR: (.*) This is error log$`,
+				`(.*) ERROR: This is error log$`,
 			},
 		},
 		{
@@ -149,10 +149,10 @@ func TestFormattedLog(t *testing.T) {
 			logger.SetVerbosity(tc.verbose)
 			logger.SetOutput(multi)
 
-			logger.Debugf("This is %s log", "debug")
-			logger.Infof("This is %s log", "info")
-			logger.Warnf("This is %s log", "warn")
-			logger.Errorf("This is %s log", "error")
+			logger.Debugf("This is %s log\n", "debug")
+			logger.Infof("This is %s log\n", "info")
+			logger.Warnf("This is %s log\n", "warn")
+			logger.Errorf("This is %s log\n", "error")
 
 			if logger.GetVerbosity() != golog.NONE {
 				arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
@@ -184,25 +184,25 @@ func TestLogColor(t *testing.T) {
 			"Debug",
 			golog.DEBUG,
 			false,
-			`DEBUG: (.*) This is debug log$`,
+			`(.*) DEBUG: This is debug log`,
 		},
 		{
 			"Info",
 			golog.INFO,
 			true,
-			`INFO: (.*) This is info log$`,
+			`(.*) INFO: This is info log`,
 		},
 		{
 			"Warn",
 			golog.WARN,
 			false,
-			`WARN: (.*) This is warn log$`,
+			`(.*) WARN: This is warn log`,
 		},
 		{
 			"Error",
 			golog.ERROR,
 			true,
-			`ERROR: (.*) This is error log$`,
+			`(.*) ERROR: This is error log`,
 		},
 	}
 
@@ -222,13 +222,13 @@ func TestLogColor(t *testing.T) {
 			}
 
 			if tc.level == golog.DEBUG {
-				logger.Debugf("This is %s log", "debug")
+				logger.Debugf("This is %s log\n", "debug")
 			} else if tc.level == golog.INFO {
-				logger.Infof("This is %s log", "info")
+				logger.Infof("This is %s log\n", "info")
 			} else if tc.level == golog.WARN {
-				logger.Warnf("This is %s log", "warn")
+				logger.Warnf("This is %s log\n", "warn")
 			} else {
-				logger.Errorf("This is %s log", "error")
+				logger.Errorf("This is %s log\n", "error")
 			}
 
 			b := bytes.TrimRight(buf.Bytes(), "\n\n")
@@ -255,20 +255,20 @@ func TestLogColorAll(t *testing.T) {
 			"EnableAll",
 			true,
 			[]string{
-				`DEBUG: (.*) This is debug log$`,
-				`INFO: (.*) This is info log$`,
-				`WARN: (.*) This is warn log$`,
-				`ERROR: (.*) This is error log$`,
+				`(.*) DEBUG: This is debug log`,
+				`(.*) INFO: This is info log`,
+				`(.*) WARN: This is warn log`,
+				`(.*) ERROR: This is error log`,
 			},
 		},
 		{
 			"DisableAll",
 			false,
 			[]string{
-				`DEBUG: (.*) This is debug log$`,
-				`INFO: (.*) This is info log$`,
-				`WARN: (.*) This is warn log$`,
-				`ERROR: (.*) This is error log$`,
+				`(.*) DEBUG: This is debug log`,
+				`(.*) INFO: This is info log`,
+				`(.*) WARN: This is warn log`,
+				`(.*) ERROR: This is error log`,
 			},
 		},
 	}
@@ -288,10 +288,10 @@ func TestLogColorAll(t *testing.T) {
 				logger.DisableColor()
 			}
 
-			logger.Debugf("This is %s log", "debug")
-			logger.Infof("This is %s log", "info")
-			logger.Warnf("This is %s log", "warn")
-			logger.Errorf("This is %s log", "error")
+			logger.Debugf("This is %s log\n", "debug")
+			logger.Infof("This is %s log\n", "info")
+			logger.Warnf("This is %s log\n", "warn")
+			logger.Errorf("This is %s log\n", "error")
 
 			arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
 			for idx, w := range tc.output {
@@ -315,7 +315,7 @@ func TestLogDefault(t *testing.T) {
 	}{
 		{
 			"Error",
-			`ERROR: (.*) This is error log$`,
+			`(.*) ERROR: This is error log`,
 		},
 	}
 
@@ -328,10 +328,10 @@ func TestLogDefault(t *testing.T) {
 			logger.SetVerbosity(5)
 			logger.SetLevelOutput(golog.ERROR, multi)
 
-			logger.Debugf("This is %s log", "debug")
-			logger.Infof("This is %s log", "info")
-			logger.Warnf("This is %s log", "warn")
-			logger.Errorf("This is %s log", "error")
+			logger.Debugf("This is %s log\n", "debug")
+			logger.Infof("This is %s log\n", "info")
+			logger.Warnf("This is %s log\n", "warn")
+			logger.Errorf("This is %s log\n", "error")
 
 			b := bytes.TrimRight(buf.Bytes(), "\n\n")
 			msg := string(b)
@@ -350,10 +350,10 @@ func TestLogCaller(t *testing.T) {
 	var buf bytes.Buffer
 
 	output := []string{
-		`DEBUG: (.*) log_test.go:366:TestLogCaller This is debug log$`,
-		`INFO: (.*) log_test.go:367:TestLogCaller This is info log$`,
-		`WARN: (.*) log_test.go:368:TestLogCaller This is warn log$`,
-		`ERROR: (.*) log_test.go:369:TestLogCaller This is error log$`,
+		`(.*) log_test.go:365:TestLogCaller DEBUG: This is debug log$`,
+		`(.*) log_test.go:366:TestLogCaller INFO: This is info log$`,
+		`(.*) log_test.go:367:TestLogCaller WARN: This is warn log$`,
+		`(.*) log_test.go:368:TestLogCaller ERROR: This is error log$`,
 	}
 
 	multi := io.MultiWriter(&buf, os.Stdout)
@@ -362,10 +362,10 @@ func TestLogCaller(t *testing.T) {
 	logger.SetVerbosity(5)
 	logger.EnableCaller(true)
 
-	logger.Debugf("This is %s log", "debug")
-	logger.Infof("This is %s log", "info")
-	logger.Warnf("This is %s log", "warn")
-	logger.Errorf("This is %s log", "error")
+	logger.Debugf("This is %s log\n", "debug")
+	logger.Infof("This is %s log\n", "info")
+	logger.Warnf("This is %s log\n", "warn")
+	logger.Errorf("This is %s log\n", "error")
 
 	arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
 	for idx, w := range output {
