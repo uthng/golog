@@ -7,7 +7,7 @@ import (
 	//"log"
 	"os"
 	"path"
-	//"reflect"
+	"reflect"
 	"runtime"
 	"strings"
 	"sync"
@@ -69,9 +69,10 @@ type level struct {
 
 // Logger is a wrapper of go log integrating log level
 type Logger struct {
-	levels  map[int]*level
-	verbose int // if 0, no log
-	caller  bool
+	levels            map[int]*level
+	verbose           int // if 0, no log
+	caller            bool
+	fullStructuredLog bool
 }
 
 var defaultLogger *Logger
@@ -89,6 +90,7 @@ func NewLogger() *Logger {
 	logger := &Logger{}
 	logger.verbose = 4
 	logger.caller = false
+	logger.fullStructuredLog = false
 
 	logger.levels = make(map[int]*level)
 	for i := FATAL; i <= DEBUG; i++ {
@@ -143,6 +145,11 @@ func (l *Logger) SetLevelOutput(level int, w io.Writer) {
 // EnableCaller enables/disables caller infos for all log levels
 func (l *Logger) EnableCaller(enabled bool) {
 	l.caller = enabled
+}
+
+// EnableFullStructuredLog enables/disables full structured log for all levels
+func (l *Logger) EnableFullStructuredLog(enabled bool) {
+	l.fullStructuredLog = enabled
 }
 
 // EnableColor enables color for all log levels
@@ -210,6 +217,11 @@ func (l *Logger) Infoln(v ...interface{}) {
 	Log(PRINTLN, l, INFO, "", v...)
 }
 
+// Infow logs with info level with structured log format
+func (l *Logger) Infow(msg string, v ...interface{}) {
+	Log(PRINTW, l, INFO, msg, v...)
+}
+
 // Warn logs with warn level
 func (l *Logger) Warn(v ...interface{}) {
 	Log(PRINT, l, WARN, "", v...)
@@ -225,6 +237,11 @@ func (l *Logger) Warnln(v ...interface{}) {
 	Log(PRINTLN, l, WARN, "", v...)
 }
 
+// Warnw logs with warn level with structured log format
+func (l *Logger) Warnw(msg string, v ...interface{}) {
+	Log(PRINTW, l, WARN, msg, v...)
+}
+
 // Error logs with error level
 func (l *Logger) Error(v ...interface{}) {
 	Log(PRINT, l, ERROR, "", v...)
@@ -238,6 +255,11 @@ func (l *Logger) Errorf(f string, v ...interface{}) {
 // Errorln logs with error level
 func (l *Logger) Errorln(v ...interface{}) {
 	Log(PRINTLN, l, ERROR, "", v...)
+}
+
+// Errorw logs with error level with structured log format
+func (l *Logger) Errorw(msg string, v ...interface{}) {
+	Log(PRINTW, l, DEBUG, msg, v...)
 }
 
 // Fatal logs with Print() followed by os.Exit(1)
@@ -256,6 +278,11 @@ func (l *Logger) Fatalf(f string, v ...interface{}) {
 func (l *Logger) Fatalln(v ...interface{}) {
 	Log(PRINTLN, l, FATAL, "", v...)
 	os.Exit(1)
+}
+
+// Fatalw logs with fatal level with structured log format
+func (l *Logger) Fatalw(msg string, v ...interface{}) {
+	Log(PRINTW, l, FATAL, msg, v...)
 }
 
 //////////// DEFAULT LOGGER ////////////////////////////
@@ -292,6 +319,11 @@ func SetLevelOutput(level int, w io.Writer) {
 // EnableCaller enables/disables caller infos for all log levels
 func EnableCaller(enabled bool) {
 	defaultLogger.caller = enabled
+}
+
+// EnableFullStructuredLog enables/disables full structured log for all levels
+func EnableFullStructuredLog(enabled bool) {
+	defaultLogger.fullStructuredLog = enabled
 }
 
 // EnableColor enables color for all log levels
@@ -338,6 +370,11 @@ func Debugln(v ...interface{}) {
 	Log(PRINTLN, defaultLogger, DEBUG, "", v...)
 }
 
+// Debugw logs with debug level
+func Debugw(msg string, v ...interface{}) {
+	Log(PRINTLN, defaultLogger, DEBUG, msg, v...)
+}
+
 // Info logs with info level
 func Info(v ...interface{}) {
 	Log(PRINT, defaultLogger, INFO, "", v...)
@@ -349,7 +386,12 @@ func Infof(f string, v ...interface{}) {
 }
 
 // Infoln logs with info level
-func Infoln(v ...interface{}) {
+func Infoln(msg string, v ...interface{}) {
+	Log(PRINTLN, defaultLogger, INFO, msg, v...)
+}
+
+// Infow logs with debug level
+func Infow(v ...interface{}) {
 	Log(PRINTLN, defaultLogger, INFO, "", v...)
 }
 
@@ -368,6 +410,11 @@ func Warnln(v ...interface{}) {
 	Log(PRINTLN, defaultLogger, WARN, "", v...)
 }
 
+// Warnw logs with debug level
+func Warnw(msg string, v ...interface{}) {
+	Log(PRINTLN, defaultLogger, WARN, msg, v...)
+}
+
 // Error logs with error level
 func Error(v ...interface{}) {
 	Log(PRINT, defaultLogger, ERROR, "", v...)
@@ -381,6 +428,11 @@ func Errorf(f string, v ...interface{}) {
 // Errorln logs with error level
 func Errorln(v ...interface{}) {
 	Log(PRINTLN, defaultLogger, ERROR, "", v...)
+}
+
+// Errorw logs with error level
+func Errorw(msg string, v ...interface{}) {
+	Log(PRINTLN, defaultLogger, DEBUG, msg, v...)
 }
 
 // Fatal logs with Print() followed by os.Exit(1)
@@ -398,6 +450,12 @@ func Fatalf(f string, v ...interface{}) {
 // Fatalln logs with Println() followed by os.Exit(1)
 func Fatalln(v ...interface{}) {
 	Log(PRINTLN, defaultLogger, FATAL, "", v...)
+	os.Exit(1)
+}
+
+// Fatalw logs with error level
+func Fatalw(msg string, v ...interface{}) {
+	Log(PRINTLN, defaultLogger, FATAL, msg, v...)
 	os.Exit(1)
 }
 
@@ -434,9 +492,17 @@ func printMsg(p int, l *Logger, level int, caller string, f string, v ...interfa
 		}
 
 		if l.caller {
-			prefix = fmt.Sprintf("%s %s %s", getTimeNow(), caller, cf.SprintFunc()(prefixes[level]))
+			if l.fullStructuredLog {
+				prefix = fmt.Sprintf("ts=%s caller=%s level=%s", getTimeNow(), caller, cf.SprintFunc()(prefixes[level]))
+			} else {
+				prefix = fmt.Sprintf("%s %s %s", getTimeNow(), caller, cf.SprintFunc()(prefixes[level]))
+			}
 		} else {
-			prefix = fmt.Sprintf("%s %s", getTimeNow(), cf.SprintFunc()(prefixes[level]))
+			if l.fullStructuredLog {
+				prefix = fmt.Sprintf("ts=%s level=%s", getTimeNow(), cf.SprintFunc()(prefixes[level]))
+			} else {
+				prefix = fmt.Sprintf("%s %s", getTimeNow(), cf.SprintFunc()(prefixes[level]))
+			}
 		}
 
 		switch p {
@@ -447,7 +513,11 @@ func printMsg(p int, l *Logger, level int, caller string, f string, v ...interfa
 		case PRINTLN:
 			fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
 		case PRINTW:
-			printw(l.levels[level].output, prefix, ct, f, v...)
+			if l.fullStructuredLog {
+				printw(l.levels[level].output, prefix, ct, ct.SprintFunc()("msg=")+quoteString(f), v...)
+			} else {
+				printw(l.levels[level].output, prefix, ct, ct.SprintFunc()(f), v...)
+			}
 		default:
 			fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
 		}
@@ -474,7 +544,7 @@ func printw(output io.Writer, prefix string, ct *color.Color, msg string, keyval
 	var format string
 	kv := keyvals
 
-	pairs = append(pairs, prefix, ct.SprintFunc()(msg))
+	pairs = append(pairs, prefix, msg)
 	format += "%s %s "
 
 	if len(kv)%2 != 0 {
@@ -492,19 +562,15 @@ func printw(output io.Writer, prefix string, ct *color.Color, msg string, keyval
 		// cast 2nd elem = value
 		v := kv[i+1]
 		pair := ""
-		//kind := reflect.ValueOf(v).Kind()
+		kind := reflect.ValueOf(v).Kind()
 
-		//if kind == reflect.Array || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct || kind == reflect.Ptr {
+		if kind == reflect.Array || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct || kind == reflect.Ptr {
+			pair = fmt.Sprintf("%s=%+v", k, v)
+		} else {
+			s := cast.ToString(v)
+			pair = fmt.Sprintf("%s=%s", k, quoteString(s))
+		}
 		//pair = fmt.Sprintf("%s=%+v", k, v)
-		//} else {
-		//s := cast.ToString(v)
-		//if strings.Contains(s, " ") {
-		//pair = fmt.Sprintf("%s=\"%s\"", k, cast.ToString(v))
-		//} else {
-		//pair = fmt.Sprintf("%s=%s", k, cast.ToString(v))
-		//}
-		//}
-		pair = fmt.Sprintf("%s=%+v", k, v)
 		pairs = append(pairs, pair)
 		if i != len(kv)-2 {
 			format += "%s "
@@ -514,4 +580,13 @@ func printw(output io.Writer, prefix string, ct *color.Color, msg string, keyval
 	}
 
 	fmt.Fprintf(output, format, pairs...)
+}
+
+func quoteString(str string) string {
+	s := str
+	if strings.Contains(s, " ") {
+		s = "\"" + s + "\""
+	}
+
+	return s
 }

@@ -379,3 +379,35 @@ func TestLogCaller(t *testing.T) {
 	}
 
 }
+
+func TestLogWith(t *testing.T) {
+	var buf bytes.Buffer
+
+	output := []string{
+		`(.*) log_test.go:365:TestLogCaller DEBUG: This is debug log$`,
+		`(.*) log_test.go:366:TestLogCaller INFO: This is info log$`,
+		`(.*) log_test.go:367:TestLogCaller WARN: This is warn log$`,
+		`(.*) log_test.go:368:TestLogCaller ERROR: This is error log$`,
+	}
+
+	multi := io.MultiWriter(&buf, os.Stdout)
+	logger := golog.NewLogger()
+	logger.SetOutput(multi)
+	logger.SetVerbosity(5)
+	logger.EnableCaller(true)
+	logger.EnableFullStructuredLog(true)
+
+	logger.Infow("This is %s log", "level", "debug level", "output", output, "logger", logger, "value", 15.5)
+
+	arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
+	for idx, w := range output {
+		msg := string(arr[idx])
+		msg = utils.StripAnsi(msg)
+
+		matched, _ := regexp.MatchString(w, msg)
+		if !matched {
+			t.Errorf("\nwant:\n%s\nhave:\n%s", w, msg)
+		}
+	}
+
+}
