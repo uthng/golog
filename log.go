@@ -7,12 +7,14 @@ import (
 	//"log"
 	"os"
 	"path"
+	//"reflect"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/spf13/cast"
 )
 
 const (
@@ -37,6 +39,8 @@ const (
 	PRINTF
 	// PRINTLN = 2
 	PRINTLN
+	// PRINTW = 3
+	PRINTW
 )
 
 var prefixes = map[int]string{
@@ -184,6 +188,11 @@ func (l *Logger) Debugf(f string, v ...interface{}) {
 // Debugln logs with debug level
 func (l *Logger) Debugln(v ...interface{}) {
 	Log(PRINTLN, l, DEBUG, "", v...)
+}
+
+// Debugw logs with debug level with structured log format
+func (l *Logger) Debugw(msg string, v ...interface{}) {
+	Log(PRINTW, l, DEBUG, msg, v...)
 }
 
 // Info logs with info level
@@ -437,6 +446,8 @@ func printMsg(p int, l *Logger, level int, caller string, f string, v ...interfa
 			fmt.Fprintf(l.levels[level].output, "%s %s", prefix, ct.SprintfFunc()(f, v...))
 		case PRINTLN:
 			fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
+		case PRINTW:
+			printw(l.levels[level].output, prefix, ct, f, v...)
 		default:
 			fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
 		}
@@ -456,4 +467,51 @@ func getInfoCaller() string {
 
 func getTimeNow() string {
 	return time.Now().Format(time.RFC3339Nano)
+}
+
+func printw(output io.Writer, prefix string, ct *color.Color, msg string, keyvals ...interface{}) {
+	var pairs []interface{}
+	var format string
+	kv := keyvals
+
+	pairs = append(pairs, prefix, ct.SprintFunc()(msg))
+	format += "%s %s "
+
+	if len(kv)%2 != 0 {
+		kv = append(kv, "missing")
+	}
+
+	for i := 0; i < len(kv); i += 2 {
+		// cast 1st elem = key to string
+		k := cast.ToString(kv[i])
+		if k == "" {
+			k = "missing"
+		}
+		k = ct.SprintFunc()(k)
+
+		// cast 2nd elem = value
+		v := kv[i+1]
+		pair := ""
+		//kind := reflect.ValueOf(v).Kind()
+
+		//if kind == reflect.Array || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct || kind == reflect.Ptr {
+		//pair = fmt.Sprintf("%s=%+v", k, v)
+		//} else {
+		//s := cast.ToString(v)
+		//if strings.Contains(s, " ") {
+		//pair = fmt.Sprintf("%s=\"%s\"", k, cast.ToString(v))
+		//} else {
+		//pair = fmt.Sprintf("%s=%s", k, cast.ToString(v))
+		//}
+		//}
+		pair = fmt.Sprintf("%s=%+v", k, v)
+		pairs = append(pairs, pair)
+		if i != len(kv)-2 {
+			format += "%s "
+		} else {
+			format += "%s\n"
+		}
+	}
+
+	fmt.Fprintf(output, format, pairs...)
 }
