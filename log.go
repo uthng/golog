@@ -398,8 +398,8 @@ func Infof(f string, v ...interface{}) {
 }
 
 // Infoln logs with info level
-func Infoln(msg string, v ...interface{}) {
-	Log(PRINTLN, defaultLogger, INFO, msg, v...)
+func Infoln(v ...interface{}) {
+	Log(PRINTLN, defaultLogger, INFO, "", v...)
 }
 
 // Infow logs with debug level
