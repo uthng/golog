@@ -384,7 +384,7 @@ func Debugln(v ...interface{}) {
 
 // Debugw logs with debug level
 func Debugw(msg string, v ...interface{}) {
-	Log(PRINTLN, defaultLogger, DEBUG, msg, v...)
+	Log(PRINTW, defaultLogger, DEBUG, msg, v...)
 }
 
 // Info logs with info level
@@ -404,7 +404,7 @@ func Infoln(v ...interface{}) {
 
 // Infow logs with debug level
 func Infow(v ...interface{}) {
-	Log(PRINTLN, defaultLogger, INFO, "", v...)
+	Log(PRINTW, defaultLogger, INFO, "", v...)
 }
 
 // Warn logs with warn level
@@ -424,7 +424,7 @@ func Warnln(v ...interface{}) {
 
 // Warnw logs with debug level
 func Warnw(msg string, v ...interface{}) {
-	Log(PRINTLN, defaultLogger, WARN, msg, v...)
+	Log(PRINTW, defaultLogger, WARN, msg, v...)
 }
 
 // Error logs with error level
@@ -444,7 +444,7 @@ func Errorln(v ...interface{}) {
 
 // Errorw logs with error level
 func Errorw(msg string, v ...interface{}) {
-	Log(PRINTLN, defaultLogger, ERROR, msg, v...)
+	Log(PRINTW, defaultLogger, ERROR, msg, v...)
 }
 
 // Fatal logs with Print() followed by os.Exit(1)
@@ -461,7 +461,7 @@ func Fatalf(f string, v ...interface{}) {
 
 // Fatalln logs with Println() followed by os.Exit(1)
 func Fatalln(v ...interface{}) {
-	Log(PRINTLN, defaultLogger, FATAL, "", v...)
+	Log(PRINTW, defaultLogger, FATAL, "", v...)
 	os.Exit(1)
 }
 
