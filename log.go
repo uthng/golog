@@ -73,6 +73,7 @@ type Logger struct {
 	verbose           int // if 0, no log
 	caller            bool
 	fullStructuredLog bool
+	timeFormat        string
 }
 
 var defaultLogger *Logger
@@ -91,6 +92,7 @@ func NewLogger() *Logger {
 	logger.verbose = 4
 	logger.caller = false
 	logger.fullStructuredLog = false
+	logger.timeFormat = time.RFC3339
 
 	logger.levels = make(map[int]*level)
 	for i := FATAL; i <= DEBUG; i++ {
@@ -140,6 +142,11 @@ func (l *Logger) SetOutput(w io.Writer) {
 // SetLevelOutput sets output destination for a specific level
 func (l *Logger) SetLevelOutput(level int, w io.Writer) {
 	l.levels[level].output = w
+}
+
+// SetTimeFormat sets timestamp with the given format
+func (l *Logger) SetTimeFormat(format string) {
+	l.timeFormat = format
 }
 
 // EnableCaller enables/disables caller infos for all log levels
@@ -314,6 +321,11 @@ func SetOutput(w io.Writer) {
 // SetLevelOutput sets output destination for a specific level
 func SetLevelOutput(level int, w io.Writer) {
 	defaultLogger.levels[level].output = w
+}
+
+// SetTimeFormat sets timestamp with the given format
+func SetTimeFormat(format string) {
+	defaultLogger.timeFormat = format
 }
 
 // EnableCaller enables/disables caller infos for all log levels
@@ -493,15 +505,15 @@ func printMsg(p int, l *Logger, level int, caller string, f string, v ...interfa
 
 		if l.caller {
 			if l.fullStructuredLog {
-				prefix = fmt.Sprintf("ts=%s caller=%s level=%s", getTimeNow(), caller, cf.SprintFunc()(prefixes[level]))
+				prefix = fmt.Sprintf("ts=%s caller=%s level=%s", getTimeNow(l.timeFormat), caller, cf.SprintFunc()(prefixes[level]))
 			} else {
-				prefix = fmt.Sprintf("%s %s %s", getTimeNow(), caller, cf.SprintFunc()(prefixes[level]+":"))
+				prefix = fmt.Sprintf("%s %s %s", getTimeNow(l.timeFormat), caller, cf.SprintFunc()(prefixes[level]+":"))
 			}
 		} else {
 			if l.fullStructuredLog {
-				prefix = fmt.Sprintf("ts=%s level=%s", getTimeNow(), cf.SprintFunc()(prefixes[level]))
+				prefix = fmt.Sprintf("ts=%s level=%s", getTimeNow(l.timeFormat), cf.SprintFunc()(prefixes[level]))
 			} else {
-				prefix = fmt.Sprintf("%s %s", getTimeNow(), cf.SprintFunc()(prefixes[level]+":"))
+				prefix = fmt.Sprintf("%s %s", getTimeNow(l.timeFormat), cf.SprintFunc()(prefixes[level]+":"))
 			}
 		}
 
@@ -535,8 +547,8 @@ func getInfoCaller() string {
 	return ""
 }
 
-func getTimeNow() string {
-	return time.Now().Format(time.RFC3339Nano)
+func getTimeNow(format string) string {
+	return time.Now().Format(format)
 }
 
 func printw(output io.Writer, prefix string, ct *color.Color, msg string, keyvals ...interface{}) {

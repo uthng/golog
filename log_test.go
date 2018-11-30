@@ -390,20 +390,20 @@ func TestLogWith(t *testing.T) {
 			"NoFullStructured",
 			false,
 			[]string{
-				`(.*) log_test.go:422:func1 DEBUG: This is debug log level="debug level" value=15.5`,
-				`(.*) log_test.go:423:func1 INFO: This is info log level="info level" value=15.5`,
-				`(.*) log_test.go:424:func1 WARN: This is warn log level="warn level" value=15.5`,
-				`(.*) log_test.go:425:func1 ERROR: This is error log level="error level" value=15.5`,
+				`(.*) log_test.go:423:func1 DEBUG: This is debug log level="debug level" value=15.5`,
+				`(.*) log_test.go:424:func1 INFO: This is info log level="info level" value=15.5`,
+				`(.*) log_test.go:425:func1 WARN: This is warn log level="warn level" value=15.5`,
+				`(.*) log_test.go:426:func1 ERROR: This is error log level="error level" value=15.5`,
 			},
 		},
 		{
 			"FullStructured",
 			true,
 			[]string{
-				`ts=(.*) caller=log_test.go:422:func1 level=DEBUG msg="This is debug log" level="debug level" value=15.5`,
-				`ts=(.*) caller=log_test.go:423:func1 level=INFO msg="This is info log" level="info level" value=15.5`,
-				`ts=(.*) caller=log_test.go:424:func1 level=WARN msg="This is warn log" level="warn level" value=15.5`,
-				`ts=(.*) caller=log_test.go:425:func1 level=ERROR msg="This is error log" level="error level" value=15.5`,
+				`ts=(.*) caller=log_test.go:423:func1 level=DEBUG msg="This is debug log" level="debug level" value=15.5`,
+				`ts=(.*) caller=log_test.go:424:func1 level=INFO msg="This is info log" level="info level" value=15.5`,
+				`ts=(.*) caller=log_test.go:425:func1 level=WARN msg="This is warn log" level="warn level" value=15.5`,
+				`ts=(.*) caller=log_test.go:426:func1 level=ERROR msg="This is error log" level="error level" value=15.5`,
 			},
 		},
 	}
@@ -418,6 +418,7 @@ func TestLogWith(t *testing.T) {
 			logger.SetVerbosity(5)
 			logger.EnableCaller(true)
 			logger.EnableFullStructuredLog(tc.structured)
+			logger.SetTimeFormat("2006-01-02T15:04:05.000000")
 
 			logger.Debugw("This is debug log", "level", "debug level", "value", 15.5)
 			logger.Infow("This is info log", "level", "info level", "value", 15.5)
