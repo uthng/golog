@@ -44,10 +44,10 @@ const (
 )
 
 var prefixes = map[int]string{
-	ERROR: "ERROR:",
-	WARN:  "WARN:",
-	INFO:  "INFO:",
-	DEBUG: "DEBUG:",
+	ERROR: "ERROR",
+	WARN:  "WARN",
+	INFO:  "INFO",
+	DEBUG: "DEBUG",
 }
 
 var colors = map[int][]color.Attribute{
@@ -259,7 +259,7 @@ func (l *Logger) Errorln(v ...interface{}) {
 
 // Errorw logs with error level with structured log format
 func (l *Logger) Errorw(msg string, v ...interface{}) {
-	Log(PRINTW, l, DEBUG, msg, v...)
+	Log(PRINTW, l, ERROR, msg, v...)
 }
 
 // Fatal logs with Print() followed by os.Exit(1)
@@ -432,7 +432,7 @@ func Errorln(v ...interface{}) {
 
 // Errorw logs with error level
 func Errorw(msg string, v ...interface{}) {
-	Log(PRINTLN, defaultLogger, DEBUG, msg, v...)
+	Log(PRINTLN, defaultLogger, ERROR, msg, v...)
 }
 
 // Fatal logs with Print() followed by os.Exit(1)
@@ -495,13 +495,13 @@ func printMsg(p int, l *Logger, level int, caller string, f string, v ...interfa
 			if l.fullStructuredLog {
 				prefix = fmt.Sprintf("ts=%s caller=%s level=%s", getTimeNow(), caller, cf.SprintFunc()(prefixes[level]))
 			} else {
-				prefix = fmt.Sprintf("%s %s %s", getTimeNow(), caller, cf.SprintFunc()(prefixes[level]))
+				prefix = fmt.Sprintf("%s %s %s", getTimeNow(), caller, cf.SprintFunc()(prefixes[level]+":"))
 			}
 		} else {
 			if l.fullStructuredLog {
 				prefix = fmt.Sprintf("ts=%s level=%s", getTimeNow(), cf.SprintFunc()(prefixes[level]))
 			} else {
-				prefix = fmt.Sprintf("%s %s", getTimeNow(), cf.SprintFunc()(prefixes[level]))
+				prefix = fmt.Sprintf("%s %s", getTimeNow(), cf.SprintFunc()(prefixes[level]+":"))
 			}
 		}
 
@@ -565,10 +565,10 @@ func printw(output io.Writer, prefix string, ct *color.Color, msg string, keyval
 		kind := reflect.ValueOf(v).Kind()
 
 		if kind == reflect.Array || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct || kind == reflect.Ptr {
-			pair = fmt.Sprintf("%s=%+v", k, v)
+			pair = fmt.Sprintf("%s=%+v", ct.SprintFunc()(k), v)
 		} else {
 			s := cast.ToString(v)
-			pair = fmt.Sprintf("%s=%s", k, quoteString(s))
+			pair = fmt.Sprintf("%s=%s", ct.SprintFunc()(k), quoteString(s))
 		}
 		//pair = fmt.Sprintf("%s=%+v", k, v)
 		pairs = append(pairs, pair)

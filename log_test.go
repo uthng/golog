@@ -381,33 +381,59 @@ func TestLogCaller(t *testing.T) {
 }
 
 func TestLogWith(t *testing.T) {
-	var buf bytes.Buffer
-
-	output := []string{
-		`(.*) log_test.go:365:TestLogCaller DEBUG: This is debug log$`,
-		`(.*) log_test.go:366:TestLogCaller INFO: This is info log$`,
-		`(.*) log_test.go:367:TestLogCaller WARN: This is warn log$`,
-		`(.*) log_test.go:368:TestLogCaller ERROR: This is error log$`,
+	testCases := []struct {
+		name       string
+		structured bool
+		output     []string
+	}{
+		{
+			"NoFullStructured",
+			false,
+			[]string{
+				`(.*) log_test.go:422:func1 DEBUG: This is debug log level="debug level" value=15.5`,
+				`(.*) log_test.go:423:func1 INFO: This is info log level="info level" value=15.5`,
+				`(.*) log_test.go:424:func1 WARN: This is warn log level="warn level" value=15.5`,
+				`(.*) log_test.go:425:func1 ERROR: This is error log level="error level" value=15.5`,
+			},
+		},
+		{
+			"FullStructured",
+			true,
+			[]string{
+				`ts=(.*) caller=log_test.go:422:func1 level=DEBUG msg="This is debug log" level="debug level" value=15.5`,
+				`ts=(.*) caller=log_test.go:423:func1 level=INFO msg="This is info log" level="info level" value=15.5`,
+				`ts=(.*) caller=log_test.go:424:func1 level=WARN msg="This is warn log" level="warn level" value=15.5`,
+				`ts=(.*) caller=log_test.go:425:func1 level=ERROR msg="This is error log" level="error level" value=15.5`,
+			},
+		},
 	}
 
-	multi := io.MultiWriter(&buf, os.Stdout)
-	logger := golog.NewLogger()
-	logger.SetOutput(multi)
-	logger.SetVerbosity(5)
-	logger.EnableCaller(true)
-	logger.EnableFullStructuredLog(true)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
 
-	logger.Infow("This is %s log", "level", "debug level", "output", output, "logger", logger, "value", 15.5)
+			multi := io.MultiWriter(&buf, os.Stdout)
+			logger := golog.NewLogger()
+			logger.SetOutput(multi)
+			logger.SetVerbosity(5)
+			logger.EnableCaller(true)
+			logger.EnableFullStructuredLog(tc.structured)
 
-	arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
-	for idx, w := range output {
-		msg := string(arr[idx])
-		msg = utils.StripAnsi(msg)
+			logger.Debugw("This is debug log", "level", "debug level", "value", 15.5)
+			logger.Infow("This is info log", "level", "info level", "value", 15.5)
+			logger.Warnw("This is warn log", "level", "warn level", "value", 15.5)
+			logger.Errorw("This is error log", "level", "error level", "value", 15.5)
 
-		matched, _ := regexp.MatchString(w, msg)
-		if !matched {
-			t.Errorf("\nwant:\n%s\nhave:\n%s", w, msg)
-		}
+			arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
+			for idx, w := range tc.output {
+				msg := string(arr[idx])
+				msg = utils.StripAnsi(msg)
+
+				matched, _ := regexp.MatchString(w, msg)
+				if !matched {
+					t.Errorf("\nwant:\n%s\nhave:\n%s", w, msg)
+				}
+			}
+		})
 	}
-
 }
