@@ -489,8 +489,6 @@ func printMsg(p int, l *Logger, level int, caller string, f string, v ...interfa
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	var prefix string
-
 	if l.verbose >= level {
 		ct := l.levels[level].colorText
 		cf := l.levels[level].colorPrefix
@@ -503,19 +501,7 @@ func printMsg(p int, l *Logger, level int, caller string, f string, v ...interfa
 			cf.DisableColor()
 		}
 
-		if l.caller {
-			if l.fullStructuredLog {
-				prefix = fmt.Sprintf("ts=%s caller=%s level=%s", getTimeNow(l.timeFormat), caller, cf.SprintFunc()(prefixes[level]))
-			} else {
-				prefix = fmt.Sprintf("%s %s %s", getTimeNow(l.timeFormat), caller, cf.SprintFunc()(prefixes[level]+":"))
-			}
-		} else {
-			if l.fullStructuredLog {
-				prefix = fmt.Sprintf("ts=%s level=%s", getTimeNow(l.timeFormat), cf.SprintFunc()(prefixes[level]))
-			} else {
-				prefix = fmt.Sprintf("%s %s", getTimeNow(l.timeFormat), cf.SprintFunc()(prefixes[level]+":"))
-			}
-		}
+		prefix := formatPrefix(l, level, caller, cf)
 
 		switch p {
 		case PRINT:
@@ -601,4 +587,24 @@ func quoteString(str string) string {
 	}
 
 	return s
+}
+
+func formatPrefix(l *Logger, level int, caller string, cf *color.Color) string {
+	var prefix string
+
+	if l.caller {
+		if l.fullStructuredLog {
+			prefix = fmt.Sprintf("ts=%s caller=%s level=%s", getTimeNow(l.timeFormat), caller, cf.SprintFunc()(prefixes[level]))
+		} else {
+			prefix = fmt.Sprintf("%s %s %s", getTimeNow(l.timeFormat), caller, cf.SprintFunc()(prefixes[level]+":"))
+		}
+	} else {
+		if l.fullStructuredLog {
+			prefix = fmt.Sprintf("ts=%s level=%s", getTimeNow(l.timeFormat), cf.SprintFunc()(prefixes[level]))
+		} else {
+			prefix = fmt.Sprintf("%s %s", getTimeNow(l.timeFormat), cf.SprintFunc()(prefixes[level]+":"))
+		}
+	}
+
+	return prefix
 }
