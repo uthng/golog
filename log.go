@@ -73,6 +73,7 @@ type Logger struct {
 	verbose           int // if 0, no log
 	caller            bool
 	fullStructuredLog bool
+	timestamp         bool
 	timeFormat        string
 }
 
@@ -92,6 +93,7 @@ func NewLogger() *Logger {
 	logger.verbose = 4
 	logger.caller = false
 	logger.fullStructuredLog = false
+	logger.timestamp = false
 	logger.timeFormat = time.RFC3339
 
 	logger.levels = make(map[int]*level)
@@ -142,6 +144,11 @@ func (l *Logger) SetOutput(w io.Writer) {
 // SetLevelOutput sets output destination for a specific level
 func (l *Logger) SetLevelOutput(level int, w io.Writer) {
 	l.levels[level].output = w
+}
+
+// EnableTimestamp enables/disables caller infos for all log levels
+func (l *Logger) EnableTimestamp(enabled bool) {
+	l.timestamp = enabled
 }
 
 // SetTimeFormat sets timestamp with the given format
@@ -321,6 +328,11 @@ func SetOutput(w io.Writer) {
 // SetLevelOutput sets output destination for a specific level
 func SetLevelOutput(level int, w io.Writer) {
 	defaultLogger.levels[level].output = w
+}
+
+// EnableTimestamp enables/disables caller infos for all log levels
+func EnableTimestamp(enabled bool) {
+	defaultLogger.timestamp = enabled
 }
 
 // SetTimeFormat sets timestamp with the given format
@@ -590,21 +602,35 @@ func quoteString(str string) string {
 }
 
 func formatPrefix(l *Logger, level int, caller string, cf *color.Color) string {
-	var prefix string
+	var ts string
+	var format string
+	var values []interface{}
 
-	if l.caller {
+	if l.timestamp {
+		ts = getTimeNow(l.timeFormat)
+		format += "%s "
 		if l.fullStructuredLog {
-			prefix = fmt.Sprintf("ts=%s caller=%s level=%s", getTimeNow(l.timeFormat), caller, cf.SprintFunc()(prefixes[level]))
+			values = append(values, "ts="+ts)
 		} else {
-			prefix = fmt.Sprintf("%s %s %s", getTimeNow(l.timeFormat), caller, cf.SprintFunc()(prefixes[level]+":"))
-		}
-	} else {
-		if l.fullStructuredLog {
-			prefix = fmt.Sprintf("ts=%s level=%s", getTimeNow(l.timeFormat), cf.SprintFunc()(prefixes[level]))
-		} else {
-			prefix = fmt.Sprintf("%s %s", getTimeNow(l.timeFormat), cf.SprintFunc()(prefixes[level]+":"))
+			values = append(values, ts)
 		}
 	}
 
-	return prefix
+	if l.caller {
+		format += "%s "
+		if l.fullStructuredLog {
+			values = append(values, "caller="+caller)
+		} else {
+			values = append(values, caller)
+		}
+	}
+
+	format += "%s"
+	if l.fullStructuredLog {
+		values = append(values, "level="+cf.SprintFunc()(prefixes[level]))
+	} else {
+		values = append(values, cf.SprintFunc()(prefixes[level]+":"))
+	}
+
+	return fmt.Sprintf(format, values...)
 }

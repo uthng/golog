@@ -23,34 +23,34 @@ func TestSimpleLog(t *testing.T) {
 			"Debug",
 			golog.DEBUG,
 			[]string{
-				`(.*) DEBUG: This is debug log$`,
-				`(.*) INFO: This is info log$`,
-				`(.*) WARN: This is warn log$`,
-				`(.*) ERROR: This is error log$`,
+				`DEBUG: This is debug log$`,
+				`INFO: This is info log$`,
+				`WARN: This is warn log$`,
+				`ERROR: This is error log$`,
 			},
 		},
 		{
 			"Info",
 			golog.INFO,
 			[]string{
-				`(.*) INFO: This is info log$`,
-				`(.*) WARN: This is warn log$`,
-				`(.*) ERROR: This is error log$`,
+				`INFO: This is info log$`,
+				`WARN: This is warn log$`,
+				`ERROR: This is error log$`,
 			},
 		},
 		{
 			"Warn",
 			golog.WARN,
 			[]string{
-				`(.*) WARN: This is warn log$`,
-				`(.*) ERROR: This is error log$`,
+				`WARN: This is warn log$`,
+				`ERROR: This is error log$`,
 			},
 		},
 		{
 			"Error",
 			golog.ERROR,
 			[]string{
-				`(.*) ERROR: This is error log$`,
+				`ERROR: This is error log$`,
 			},
 		},
 		{
@@ -103,34 +103,34 @@ func TestFormattedLog(t *testing.T) {
 			"Debug",
 			golog.DEBUG,
 			[]string{
-				`(.*) DEBUG: This is debug log$`,
-				`(.*) INFO: This is info log$`,
-				`(.*) WARN: This is warn log$`,
-				`(.*) ERROR: This is error log$`,
+				`DEBUG: This is debug log$`,
+				`INFO: This is info log$`,
+				`WARN: This is warn log$`,
+				`ERROR: This is error log$`,
 			},
 		},
 		{
 			"Info",
 			golog.INFO,
 			[]string{
-				`(.*) INFO: This is info log$`,
-				`(.*) WARN: This is warn log$`,
-				`(.*) ERROR: This is error log$`,
+				`INFO: This is info log$`,
+				`WARN: This is warn log$`,
+				`ERROR: This is error log$`,
 			},
 		},
 		{
 			"Warn",
 			golog.WARN,
 			[]string{
-				`(.*) WARN: This is warn log$`,
-				`(.*) ERROR: This is error log$`,
+				`WARN: This is warn log$`,
+				`ERROR: This is error log$`,
 			},
 		},
 		{
 			"Error",
 			golog.ERROR,
 			[]string{
-				`(.*) ERROR: This is error log$`,
+				`ERROR: This is error log$`,
 			},
 		},
 		{
@@ -184,25 +184,25 @@ func TestLogColor(t *testing.T) {
 			"Debug",
 			golog.DEBUG,
 			false,
-			`(.*) DEBUG: This is debug log`,
+			`DEBUG: This is debug log`,
 		},
 		{
 			"Info",
 			golog.INFO,
 			true,
-			`(.*) INFO: This is info log`,
+			`INFO: This is info log`,
 		},
 		{
 			"Warn",
 			golog.WARN,
 			false,
-			`(.*) WARN: This is warn log`,
+			`WARN: This is warn log`,
 		},
 		{
 			"Error",
 			golog.ERROR,
 			true,
-			`(.*) ERROR: This is error log`,
+			`ERROR: This is error log`,
 		},
 	}
 
@@ -255,20 +255,20 @@ func TestLogColorAll(t *testing.T) {
 			"EnableAll",
 			true,
 			[]string{
-				`(.*) DEBUG: This is debug log`,
-				`(.*) INFO: This is info log`,
-				`(.*) WARN: This is warn log`,
-				`(.*) ERROR: This is error log`,
+				`DEBUG: This is debug log`,
+				`INFO: This is info log`,
+				`WARN: This is warn log`,
+				`ERROR: This is error log`,
 			},
 		},
 		{
 			"DisableAll",
 			false,
 			[]string{
-				`(.*) DEBUG: This is debug log`,
-				`(.*) INFO: This is info log`,
-				`(.*) WARN: This is warn log`,
-				`(.*) ERROR: This is error log`,
+				`DEBUG: This is debug log`,
+				`INFO: This is info log`,
+				`WARN: This is warn log`,
+				`ERROR: This is error log`,
 			},
 		},
 	}
@@ -315,7 +315,7 @@ func TestLogDefault(t *testing.T) {
 	}{
 		{
 			"Error",
-			`(.*) ERROR: This is error log`,
+			`ERROR: This is error log`,
 		},
 	}
 
@@ -350,10 +350,10 @@ func TestLogCaller(t *testing.T) {
 	var buf bytes.Buffer
 
 	output := []string{
-		`(.*) log_test.go:365:TestLogCaller DEBUG: This is debug log$`,
-		`(.*) log_test.go:366:TestLogCaller INFO: This is info log$`,
-		`(.*) log_test.go:367:TestLogCaller WARN: This is warn log$`,
-		`(.*) log_test.go:368:TestLogCaller ERROR: This is error log$`,
+		`(.*) log_test.go:366:TestLogCaller DEBUG: This is debug log$`,
+		`(.*) log_test.go:367:TestLogCaller INFO: This is info log$`,
+		`(.*) log_test.go:368:TestLogCaller WARN: This is warn log$`,
+		`(.*) log_test.go:369:TestLogCaller ERROR: This is error log$`,
 	}
 
 	multi := io.MultiWriter(&buf, os.Stdout)
@@ -361,6 +361,7 @@ func TestLogCaller(t *testing.T) {
 	logger.SetOutput(multi)
 	logger.SetVerbosity(5)
 	logger.EnableCaller(true)
+	logger.EnableTimestamp(true)
 
 	logger.Debugf("This is %s log\n", "debug")
 	logger.Infof("This is %s log\n", "info")
@@ -390,20 +391,20 @@ func TestLogWith(t *testing.T) {
 			"NoFullStructured",
 			false,
 			[]string{
-				`(.*) log_test.go:423:func1 DEBUG: This is debug log level="debug level" value=15.5`,
-				`(.*) log_test.go:424:func1 INFO: This is info log level="info level" value=15.5`,
-				`(.*) log_test.go:425:func1 WARN: This is warn log level="warn level" value=15.5`,
-				`(.*) log_test.go:426:func1 ERROR: This is error log level="error level" value=15.5`,
+				`(.*) log_test.go:425:func1 DEBUG: This is debug log level="debug level" value=15.5`,
+				`(.*) log_test.go:426:func1 INFO: This is info log level="info level" value=15.5`,
+				`(.*) log_test.go:427:func1 WARN: This is warn log level="warn level" value=15.5`,
+				`(.*) log_test.go:428:func1 ERROR: This is error log level="error level" value=15.5`,
 			},
 		},
 		{
 			"FullStructured",
 			true,
 			[]string{
-				`ts=(.*) caller=log_test.go:423:func1 level=DEBUG msg="This is debug log" level="debug level" value=15.5`,
-				`ts=(.*) caller=log_test.go:424:func1 level=INFO msg="This is info log" level="info level" value=15.5`,
-				`ts=(.*) caller=log_test.go:425:func1 level=WARN msg="This is warn log" level="warn level" value=15.5`,
-				`ts=(.*) caller=log_test.go:426:func1 level=ERROR msg="This is error log" level="error level" value=15.5`,
+				`ts=(.*) caller=log_test.go:425:func1 level=DEBUG msg="This is debug log" level="debug level" value=15.5`,
+				`ts=(.*) caller=log_test.go:426:func1 level=INFO msg="This is info log" level="info level" value=15.5`,
+				`ts=(.*) caller=log_test.go:427:func1 level=WARN msg="This is warn log" level="warn level" value=15.5`,
+				`ts=(.*) caller=log_test.go:428:func1 level=ERROR msg="This is error log" level="error level" value=15.5`,
 			},
 		},
 	}
@@ -418,6 +419,7 @@ func TestLogWith(t *testing.T) {
 			logger.SetVerbosity(5)
 			logger.EnableCaller(true)
 			logger.EnableFullStructuredLog(tc.structured)
+			logger.EnableTimestamp(true)
 			logger.SetTimeFormat("2006-01-02T15:04:05.000000")
 
 			logger.Debugw("This is debug log", "level", "debug level", "value", 15.5)
