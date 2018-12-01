@@ -508,11 +508,7 @@ func printMsg(p int, l *Logger, level int, caller string, f string, v ...interfa
 		case PRINTLN:
 			fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
 		case PRINTW:
-			if l.flag&FFULLSTRUCTUREDLOG != 0 {
-				printw(l.levels[level].output, prefix, ct, ct.SprintFunc()("msg=")+quoteString(f), v...)
-			} else {
-				printw(l.levels[level].output, prefix, ct, ct.SprintFunc()(f), v...)
-			}
+			printw(l, level, prefix, ct, f, v...)
 		default:
 			fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
 		}
@@ -534,13 +530,23 @@ func getTimeNow(format string) string {
 	return time.Now().Format(format)
 }
 
-func printw(output io.Writer, prefix string, ct *color.Color, msg string, keyvals ...interface{}) {
+func printw(l *Logger, level int, prefix string, ct *color.Color, msg string, keyvals ...interface{}) {
 	var pairs []interface{}
 	var format string
+	var message string
+
+	output := l.levels[level].output
 	kv := keyvals
 
-	pairs = append(pairs, prefix, msg)
-	format += "%s %s "
+	if l.flag&FFULLSTRUCTUREDLOG != 0 {
+		message = ct.SprintFunc()("msg=") + quoteString(msg)
+		format += "%s %s "
+	} else {
+		message = ct.SprintFunc()(msg)
+		format += "%s %-60s "
+	}
+
+	pairs = append(pairs, prefix, message)
 
 	if len(kv)%2 != 0 {
 		kv = append(kv, "missing")
@@ -610,10 +616,11 @@ func formatPrefix(l *Logger, level int, caller string, cf *color.Color) string {
 		}
 	}
 
-	format += "%s"
 	if l.flag&FFULLSTRUCTUREDLOG != 0 {
+		format += "%s"
 		values = append(values, "level="+cf.SprintFunc()(prefixes[level]))
 	} else {
+		format += "%-17s"
 		values = append(values, cf.SprintFunc()(prefixes[level]+":"))
 	}
 
