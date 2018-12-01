@@ -459,13 +459,13 @@ func Fatalf(f string, v ...interface{}) {
 
 // Fatalln logs with Println() followed by os.Exit(1)
 func Fatalln(v ...interface{}) {
-	Log(PRINTW, defaultLogger, FATAL, "", v...)
+	Log(PRINTLN, defaultLogger, FATAL, "", v...)
 	os.Exit(1)
 }
 
 // Fatalw logs with error level
 func Fatalw(msg string, v ...interface{}) {
-	Log(PRINTLN, defaultLogger, FATAL, msg, v...)
+	Log(PRINTW, defaultLogger, FATAL, msg, v...)
 	os.Exit(1)
 }
 
