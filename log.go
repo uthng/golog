@@ -403,8 +403,8 @@ func Infoln(v ...interface{}) {
 }
 
 // Infow logs with debug level
-func Infow(v ...interface{}) {
-	Log(PRINTW, defaultLogger, INFO, "", v...)
+func Infow(msg string, v ...interface{}) {
+	Log(PRINTW, defaultLogger, INFO, msg, v...)
 }
 
 // Warn logs with warn level
