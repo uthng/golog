@@ -61,6 +61,7 @@ var prefixes = map[int]string{
 }
 
 var colors = map[int][]color.Attribute{
+	FATAL: []color.Attribute{color.FgRed},
 	ERROR: []color.Attribute{color.FgRed},
 	WARN:  []color.Attribute{color.FgYellow},
 	INFO:  []color.Attribute{color.FgGreen},
