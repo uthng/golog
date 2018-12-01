@@ -43,6 +43,15 @@ const (
 	PRINTW
 )
 
+const (
+	// FTIMESTAMP enables timestamp field in message log
+	FTIMESTAMP = 1 << iota
+	// FCALLER enables caller field in message log
+	FCALLER
+	// FFULLSTRUCTUREDLOG enables structured log for all fields in message log
+	FFULLSTRUCTUREDLOG
+)
+
 var prefixes = map[int]string{
 	ERROR: "ERROR",
 	WARN:  "WARN",
@@ -69,12 +78,10 @@ type level struct {
 
 // Logger is a wrapper of go log integrating log level
 type Logger struct {
-	levels            map[int]*level
-	verbose           int // if 0, no log
-	caller            bool
-	fullStructuredLog bool
-	timestamp         bool
-	timeFormat        string
+	levels     map[int]*level
+	verbose    int // if 0, no log
+	flag       int
+	timeFormat string
 }
 
 var defaultLogger *Logger
@@ -91,9 +98,7 @@ func NewLogger() *Logger {
 	color.NoColor = false
 	logger := &Logger{}
 	logger.verbose = 4
-	logger.caller = false
-	logger.fullStructuredLog = false
-	logger.timestamp = false
+	logger.flag = 0 // no flag
 	logger.timeFormat = time.RFC3339
 
 	logger.levels = make(map[int]*level)
@@ -146,24 +151,14 @@ func (l *Logger) SetLevelOutput(level int, w io.Writer) {
 	l.levels[level].output = w
 }
 
-// EnableTimestamp enables/disables caller infos for all log levels
-func (l *Logger) EnableTimestamp(enabled bool) {
-	l.timestamp = enabled
+// SetFlags sets flags for message log output
+func (l *Logger) SetFlags(flag int) {
+	l.flag = flag
 }
 
 // SetTimeFormat sets timestamp with the given format
 func (l *Logger) SetTimeFormat(format string) {
 	l.timeFormat = format
-}
-
-// EnableCaller enables/disables caller infos for all log levels
-func (l *Logger) EnableCaller(enabled bool) {
-	l.caller = enabled
-}
-
-// EnableFullStructuredLog enables/disables full structured log for all levels
-func (l *Logger) EnableFullStructuredLog(enabled bool) {
-	l.fullStructuredLog = enabled
 }
 
 // EnableColor enables color for all log levels
@@ -330,24 +325,14 @@ func SetLevelOutput(level int, w io.Writer) {
 	defaultLogger.levels[level].output = w
 }
 
-// EnableTimestamp enables/disables caller infos for all log levels
-func EnableTimestamp(enabled bool) {
-	defaultLogger.timestamp = enabled
+// SetFlags sets flags for message log output
+func SetFlags(flag int) {
+	defaultLogger.flag = flag
 }
 
 // SetTimeFormat sets timestamp with the given format
 func SetTimeFormat(format string) {
 	defaultLogger.timeFormat = format
-}
-
-// EnableCaller enables/disables caller infos for all log levels
-func EnableCaller(enabled bool) {
-	defaultLogger.caller = enabled
-}
-
-// EnableFullStructuredLog enables/disables full structured log for all levels
-func EnableFullStructuredLog(enabled bool) {
-	defaultLogger.fullStructuredLog = enabled
 }
 
 // EnableColor enables color for all log levels
@@ -523,7 +508,7 @@ func printMsg(p int, l *Logger, level int, caller string, f string, v ...interfa
 		case PRINTLN:
 			fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
 		case PRINTW:
-			if l.fullStructuredLog {
+			if l.flag&FFULLSTRUCTUREDLOG != 0 {
 				printw(l.levels[level].output, prefix, ct, ct.SprintFunc()("msg=")+quoteString(f), v...)
 			} else {
 				printw(l.levels[level].output, prefix, ct, ct.SprintFunc()(f), v...)
@@ -606,19 +591,19 @@ func formatPrefix(l *Logger, level int, caller string, cf *color.Color) string {
 	var format string
 	var values []interface{}
 
-	if l.timestamp {
+	if l.flag&FTIMESTAMP != 0 {
 		ts = getTimeNow(l.timeFormat)
 		format += "%s "
-		if l.fullStructuredLog {
+		if l.flag&FFULLSTRUCTUREDLOG != 0 {
 			values = append(values, "ts="+ts)
 		} else {
 			values = append(values, ts)
 		}
 	}
 
-	if l.caller {
+	if l.flag&FCALLER != 0 {
 		format += "%s "
-		if l.fullStructuredLog {
+		if l.flag&FFULLSTRUCTUREDLOG != 0 {
 			values = append(values, "caller="+caller)
 		} else {
 			values = append(values, caller)
@@ -626,7 +611,7 @@ func formatPrefix(l *Logger, level int, caller string, cf *color.Color) string {
 	}
 
 	format += "%s"
-	if l.fullStructuredLog {
+	if l.flag&FFULLSTRUCTUREDLOG != 0 {
 		values = append(values, "level="+cf.SprintFunc()(prefixes[level]))
 	} else {
 		values = append(values, cf.SprintFunc()(prefixes[level]+":"))

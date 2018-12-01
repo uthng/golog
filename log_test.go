@@ -350,18 +350,17 @@ func TestLogCaller(t *testing.T) {
 	var buf bytes.Buffer
 
 	output := []string{
-		`(.*) log_test.go:366:TestLogCaller DEBUG: This is debug log$`,
-		`(.*) log_test.go:367:TestLogCaller INFO: This is info log$`,
-		`(.*) log_test.go:368:TestLogCaller WARN: This is warn log$`,
-		`(.*) log_test.go:369:TestLogCaller ERROR: This is error log$`,
+		`(.*) log_test.go:365:TestLogCaller DEBUG: This is debug log$`,
+		`(.*) log_test.go:366:TestLogCaller INFO: This is info log$`,
+		`(.*) log_test.go:367:TestLogCaller WARN: This is warn log$`,
+		`(.*) log_test.go:368:TestLogCaller ERROR: This is error log$`,
 	}
 
 	multi := io.MultiWriter(&buf, os.Stdout)
 	logger := golog.NewLogger()
 	logger.SetOutput(multi)
 	logger.SetVerbosity(5)
-	logger.EnableCaller(true)
-	logger.EnableTimestamp(true)
+	logger.SetFlags(golog.FTIMESTAMP | golog.FCALLER)
 
 	logger.Debugf("This is %s log\n", "debug")
 	logger.Infof("This is %s log\n", "info")
@@ -383,28 +382,28 @@ func TestLogCaller(t *testing.T) {
 
 func TestLogWith(t *testing.T) {
 	testCases := []struct {
-		name       string
-		structured bool
-		output     []string
+		name   string
+		flag   int
+		output []string
 	}{
 		{
 			"NoFullStructured",
-			false,
+			golog.FTIMESTAMP | golog.FCALLER,
 			[]string{
-				`(.*) log_test.go:425:func1 DEBUG: This is debug log level="debug level" value=15.5`,
-				`(.*) log_test.go:426:func1 INFO: This is info log level="info level" value=15.5`,
-				`(.*) log_test.go:427:func1 WARN: This is warn log level="warn level" value=15.5`,
-				`(.*) log_test.go:428:func1 ERROR: This is error log level="error level" value=15.5`,
+				`(.*) log_test.go:422:func1 DEBUG: This is debug log level="debug level" value=15.5`,
+				`(.*) log_test.go:423:func1 INFO: This is info log level="info level" value=15.5`,
+				`(.*) log_test.go:424:func1 WARN: This is warn log level="warn level" value=15.5`,
+				`(.*) log_test.go:425:func1 ERROR: This is error log level="error level" value=15.5`,
 			},
 		},
 		{
 			"FullStructured",
-			true,
+			golog.FTIMESTAMP | golog.FCALLER | golog.FFULLSTRUCTUREDLOG,
 			[]string{
-				`ts=(.*) caller=log_test.go:425:func1 level=DEBUG msg="This is debug log" level="debug level" value=15.5`,
-				`ts=(.*) caller=log_test.go:426:func1 level=INFO msg="This is info log" level="info level" value=15.5`,
-				`ts=(.*) caller=log_test.go:427:func1 level=WARN msg="This is warn log" level="warn level" value=15.5`,
-				`ts=(.*) caller=log_test.go:428:func1 level=ERROR msg="This is error log" level="error level" value=15.5`,
+				`ts=(.*) caller=log_test.go:422:func1 level=DEBUG msg="This is debug log" level="debug level" value=15.5`,
+				`ts=(.*) caller=log_test.go:423:func1 level=INFO msg="This is info log" level="info level" value=15.5`,
+				`ts=(.*) caller=log_test.go:424:func1 level=WARN msg="This is warn log" level="warn level" value=15.5`,
+				`ts=(.*) caller=log_test.go:425:func1 level=ERROR msg="This is error log" level="error level" value=15.5`,
 			},
 		},
 	}
@@ -417,9 +416,7 @@ func TestLogWith(t *testing.T) {
 			logger := golog.NewLogger()
 			logger.SetOutput(multi)
 			logger.SetVerbosity(5)
-			logger.EnableCaller(true)
-			logger.EnableFullStructuredLog(tc.structured)
-			logger.EnableTimestamp(true)
+			logger.SetFlags(tc.flag)
 			logger.SetTimeFormat("2006-01-02T15:04:05.000000")
 
 			logger.Debugw("This is debug log", "level", "debug level", "value", 15.5)
