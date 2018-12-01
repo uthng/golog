@@ -155,6 +155,9 @@ func (l *Logger) SetLevelOutput(level int, w io.Writer) {
 
 // SetFlags sets flags for message log output
 func (l *Logger) SetFlags(flag int) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	l.flag = flag
 }
 
@@ -329,6 +332,9 @@ func SetLevelOutput(level int, w io.Writer) {
 
 // SetFlags sets flags for message log output
 func SetFlags(flag int) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	defaultLogger.flag = flag
 }
 
