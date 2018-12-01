@@ -53,6 +53,7 @@ const (
 )
 
 var prefixes = map[int]string{
+	FATAL: "FATAL",
 	ERROR: "ERROR",
 	WARN:  "WARN",
 	INFO:  "INFO",
