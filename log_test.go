@@ -437,3 +437,37 @@ func TestLogWith(t *testing.T) {
 		})
 	}
 }
+
+func TestLogFormat(t *testing.T) {
+	var buf bytes.Buffer
+
+	output := []string{
+		`This is debug log`,
+		`This is info log`,
+		`This is warn log`,
+		`This is error log`,
+	}
+
+	multi := io.MultiWriter(&buf, os.Stdout)
+	logger := golog.NewLogger()
+	logger.SetOutput(multi)
+	logger.SetVerbosity(5)
+	logger.DisableLogFormat()
+
+	// Test if any kind of print will produce the same unformatted message
+	logger.Debugw("This is debug log")
+	logger.Infow("This is info log")
+	logger.Warnf("This is warn log\n")
+	logger.Error("This is error log\n")
+
+	arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
+	for idx, w := range output {
+		msg := string(arr[idx])
+
+		matched, _ := regexp.MatchString(w, msg)
+		if !matched {
+			t.Errorf("\nwant:\n%s\nhave:\n%s", w, msg)
+		}
+	}
+
+}

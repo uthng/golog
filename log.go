@@ -84,6 +84,7 @@ type Logger struct {
 	verbose    int // if 0, no log
 	flag       int
 	timeFormat string
+	logFormat  bool
 }
 
 var defaultLogger *Logger
@@ -102,6 +103,7 @@ func NewLogger() *Logger {
 	logger.verbose = 4
 	logger.flag = 0 // no flag
 	logger.timeFormat = time.RFC3339
+	logger.logFormat = true
 
 	logger.levels = make(map[int]*level)
 	for i := FATAL; i <= DEBUG; i++ {
@@ -194,6 +196,21 @@ func (l *Logger) DisableLevelColor(level int) {
 	cf := l.levels[level].colorPrefix
 	cf.DisableColor()
 	//l.levels[level].SetPrefix(cf.SprintFunc()(prefixes[level]))
+}
+
+// EnableLogFormat enables format log of message.
+// It will print msg as a log with color or prefix etc.
+func (l *Logger) EnableLogFormat() {
+	l.EnableColor()
+	l.logFormat = true
+}
+
+// DisableLogFormat disables format log of message.
+// It will print unformatted msg as normally like with any function printf
+// without color or prefix etc.
+func (l *Logger) DisableLogFormat() {
+	l.DisableColor()
+	l.logFormat = false
 }
 
 // Debug logs with debug level
@@ -372,6 +389,21 @@ func DisableLevelColor(level int) {
 	cf.DisableColor()
 }
 
+// EnableLogFormat enables format log of message.
+// It will print msg as a log with color or prefix etc.
+func EnableLogFormat() {
+	EnableColor()
+	defaultLogger.logFormat = true
+}
+
+// DisableLogFormat disables format log of message.
+// It will print unformatted msg as normally like with any function printf
+// without color or prefix etc.
+func DisableLogFormat() {
+	DisableColor()
+	defaultLogger.logFormat = false
+}
+
 // Debug logs with debug level
 func Debug(v ...interface{}) {
 	Log(PRINT, defaultLogger, DEBUG, "", v...)
@@ -510,15 +542,35 @@ func printMsg(p int, l *Logger, level int, caller string, f string, v ...interfa
 
 		switch p {
 		case PRINT:
-			fmt.Fprint(l.levels[level].output, prefix, " ", ct.SprintFunc()(v...))
+			if l.logFormat {
+				fmt.Fprint(l.levels[level].output, prefix, " ", ct.SprintFunc()(v...))
+			} else {
+				fmt.Fprint(l.levels[level].output, ct.SprintFunc()(v...))
+			}
 		case PRINTF:
-			fmt.Fprintf(l.levels[level].output, "%s %s", prefix, ct.SprintfFunc()(f, v...))
+			if l.logFormat {
+				fmt.Fprintf(l.levels[level].output, "%s %s", prefix, ct.SprintfFunc()(f, v...))
+			} else {
+				fmt.Fprintf(l.levels[level].output, "%s", ct.SprintfFunc()(f, v...))
+			}
 		case PRINTLN:
-			fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
+			if l.logFormat {
+				fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
+			} else {
+				fmt.Fprintln(l.levels[level].output, ct.SprintlnFunc()(v...))
+			}
 		case PRINTW:
-			printw(l, level, prefix, ct, f, v...)
+			if l.logFormat {
+				printw(l, level, prefix, ct, f, v...)
+			} else {
+				fmt.Fprintf(l.levels[level].output, "%s\n", ct.SprintfFunc()(f, v...))
+			}
 		default:
-			fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
+			if l.logFormat {
+				fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
+			} else {
+				fmt.Fprintln(l.levels[level].output, ct.SprintlnFunc()(v...))
+			}
 		}
 	}
 }
