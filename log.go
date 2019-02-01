@@ -560,31 +560,36 @@ func printw(l *Logger, level int, prefix string, ct *color.Color, msg string, ke
 		kv = append(kv, "missing")
 	}
 
-	for i := 0; i < len(kv); i += 2 {
-		// cast 1st elem = key to string
-		k := cast.ToString(kv[i])
-		if k == "" {
-			k = "missing"
-		}
-		k = ct.SprintFunc()(k)
+	// if no key/value fields, return line after print message
+	if len(kv) <= 0 {
+		format += "\n"
+	} else {
+		for i := 0; i < len(kv); i += 2 {
+			// cast 1st elem = key to string
+			k := cast.ToString(kv[i])
+			if k == "" {
+				k = "missing"
+			}
+			k = ct.SprintFunc()(k)
 
-		// cast 2nd elem = value
-		v := kv[i+1]
-		pair := ""
-		kind := reflect.ValueOf(v).Kind()
+			// cast 2nd elem = value
+			v := kv[i+1]
+			pair := ""
+			kind := reflect.ValueOf(v).Kind()
 
-		if kind == reflect.Array || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct || kind == reflect.Ptr {
-			pair = fmt.Sprintf("%s=%+v", ct.SprintFunc()(k), v)
-		} else {
-			s := cast.ToString(v)
-			pair = fmt.Sprintf("%s=%s", ct.SprintFunc()(k), quoteString(s))
-		}
-		//pair = fmt.Sprintf("%s=%+v", k, v)
-		pairs = append(pairs, pair)
-		if i != len(kv)-2 {
-			format += "%s "
-		} else {
-			format += "%s\n"
+			if kind == reflect.Array || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct || kind == reflect.Ptr {
+				pair = fmt.Sprintf("%s=%+v", ct.SprintFunc()(k), v)
+			} else {
+				s := cast.ToString(v)
+				pair = fmt.Sprintf("%s=%s", ct.SprintFunc()(k), quoteString(s))
+			}
+			//pair = fmt.Sprintf("%s=%+v", k, v)
+			pairs = append(pairs, pair)
+			if i != len(kv)-2 {
+				format += "%s "
+			} else {
+				format += "%s\n"
+			}
 		}
 	}
 
