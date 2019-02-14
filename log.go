@@ -513,13 +513,13 @@ func Fatalw(msg string, v ...interface{}) {
 // Log wraps print function but using goroutine and waitgroup
 // to have a synchronization of logs.
 func Log(p int, l *Logger, level int, f string, v ...interface{}) {
-	wg.Add(1)
+	//wg.Add(1)
 	caller := getInfoCaller()
-	go func(c string) {
-		defer wg.Done()
-		printMsg(p, l, level, caller, f, v...)
-	}(caller)
-	wg.Wait()
+	//go func(c string) {
+	//defer wg.Done()
+	printMsg(p, l, level, caller, f, v...)
+	//}(caller)
+	//wg.Wait()
 }
 
 func printMsg(p int, l *Logger, level int, caller string, f string, v ...interface{}) {
