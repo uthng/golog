@@ -644,7 +644,7 @@ func parsePrefixFields(l *Logger, level int, caller string) []*Field {
 
 	field := &Field{
 		Key:   "level",
-		Value: cast.ToString(level),
+		Value: prefixes[level],
 	}
 	fields = append(fields, field)
 
@@ -784,7 +784,7 @@ func formatPrefix(l *Logger, cf *color.Color, fields []*Field) string {
 	var values []interface{}
 
 	if l.flag&FTIMESTAMP != 0 {
-		ts := cast.ToTime(getField("ts", fields).Value).Format(l.timeFormat)
+		ts := getField("ts", fields).Value
 		format += "%s "
 		if l.flag&FFULLSTRUCTUREDLOG != 0 {
 			values = append(values, "ts="+ts)
@@ -794,7 +794,7 @@ func formatPrefix(l *Logger, cf *color.Color, fields []*Field) string {
 	}
 
 	if l.flag&FCALLER != 0 {
-		caller := cast.ToString(getField("caller", fields).Value)
+		caller := getField("caller", fields).Value
 		format += "%s "
 		if l.flag&FFULLSTRUCTUREDLOG != 0 {
 			values = append(values, "caller="+caller)
@@ -803,13 +803,13 @@ func formatPrefix(l *Logger, cf *color.Color, fields []*Field) string {
 		}
 	}
 
-	level := cast.ToInt(getField("level", fields).Value)
+	level := getField("level", fields).Value
 	if l.flag&FFULLSTRUCTUREDLOG != 0 {
 		format += "%s"
-		values = append(values, "level="+cf.SprintFunc()(prefixes[level]))
+		values = append(values, "level="+cf.SprintFunc()(level))
 	} else {
 		format += "%-17s"
-		values = append(values, cf.SprintFunc()(prefixes[level]+":"))
+		values = append(values, cf.SprintFunc()(level+":"))
 	}
 
 	return fmt.Sprintf(format, values...)
