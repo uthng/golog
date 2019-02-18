@@ -87,6 +87,18 @@ type Logger struct {
 	logFormat  bool
 }
 
+// Field defines a log field in case of structured log
+type Field struct {
+	Key   string
+	Value interface{}
+}
+
+// Fields stores all log fields: prefix, static and user log
+type Fields struct {
+	Prefix []*Field
+	Log    []*Field
+}
+
 var defaultLogger *Logger
 
 // Init a default logger with verbose = 3 and
@@ -513,18 +525,20 @@ func Fatalw(msg string, v ...interface{}) {
 // Log wraps print function but using goroutine and waitgroup
 // to have a synchronization of logs.
 func Log(p int, l *Logger, level int, f string, v ...interface{}) {
-	//wg.Add(1)
+	mutex.Lock()
+
 	caller := getInfoCaller()
-	//go func(c string) {
-	//defer wg.Done()
-	printMsg(p, l, level, caller, f, v...)
-	//}(caller)
-	//wg.Wait()
+	fields := Fields{}
+
+	fields.Prefix = parsePrefixFields(l, level, caller)
+	fields.Log = parseLogFields(p, l, f, v...)
+
+	printMsg(p, l, level, fields)
+
+	defer mutex.Unlock()
 }
 
-func printMsg(p int, l *Logger, level int, caller string, f string, v ...interface{}) {
-	mutex.Lock()
-	defer mutex.Unlock()
+func printMsg(p int, l *Logger, level int, fields Fields) {
 
 	if l.verbose >= level {
 		ct := l.levels[level].colorText
@@ -538,38 +552,41 @@ func printMsg(p int, l *Logger, level int, caller string, f string, v ...interfa
 			cf.DisableColor()
 		}
 
-		prefix := formatPrefix(l, level, caller, cf)
+		prefix := formatPrefix(l, cf, fields.Prefix)
+
+		//v := convertMaptoSlice(fields.Log)
+		msg := cast.ToString(getField("msg", fields.Log).Value)
 
 		switch p {
 		case PRINT:
 			if l.logFormat {
-				fmt.Fprint(l.levels[level].output, prefix, " ", ct.SprintFunc()(v...))
+				fmt.Fprint(l.levels[level].output, prefix, " ", ct.SprintFunc()(msg))
 			} else {
-				fmt.Fprint(l.levels[level].output, ct.SprintFunc()(v...))
+				fmt.Fprint(l.levels[level].output, msg)
 			}
 		case PRINTF:
 			if l.logFormat {
-				fmt.Fprintf(l.levels[level].output, "%s %s", prefix, ct.SprintfFunc()(f, v...))
+				fmt.Fprintf(l.levels[level].output, "%s %s", prefix, ct.SprintFunc()(msg))
 			} else {
-				fmt.Fprintf(l.levels[level].output, "%s", ct.SprintfFunc()(f, v...))
+				fmt.Fprintf(l.levels[level].output, "%s", msg)
 			}
 		case PRINTLN:
 			if l.logFormat {
-				fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
+				fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(msg))
 			} else {
-				fmt.Fprintln(l.levels[level].output, ct.SprintlnFunc()(v...))
+				fmt.Fprintln(l.levels[level].output, ct.SprintlnFunc()(msg))
 			}
 		case PRINTW:
 			if l.logFormat {
-				printw(l, level, prefix, ct, f, v...)
+				printw(l, level, prefix, ct, fields.Log)
 			} else {
-				fmt.Fprintf(l.levels[level].output, "%s\n", ct.SprintfFunc()(f, v...))
+				fmt.Fprintf(l.levels[level].output, "%s\n", ct.SprintfFunc()(msg))
 			}
 		default:
 			if l.logFormat {
-				fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(v...))
+				fmt.Fprintln(l.levels[level].output, prefix, ct.SprintFunc()(msg))
 			} else {
-				fmt.Fprintln(l.levels[level].output, ct.SprintlnFunc()(v...))
+				fmt.Fprintln(l.levels[level].output, ct.SprintFunc()(msg))
 			}
 		}
 	}
@@ -590,14 +607,121 @@ func getTimeNow(format string) string {
 	return time.Now().Format(format)
 }
 
-func printw(l *Logger, level int, prefix string, ct *color.Color, msg string, keyvals ...interface{}) {
+func quoteString(str string) string {
+	s := str
+	if strings.Contains(s, " ") {
+		s = "\"" + s + "\""
+	}
+
+	return s
+}
+
+func parsePrefixFields(l *Logger, level int, caller string) []*Field {
+	var fields []*Field
+
+	if l.flag&FTIMESTAMP != 0 {
+		field := &Field{
+			Key:   "ts",
+			Value: time.Now(),
+		}
+		fields = append(fields, field)
+	}
+
+	if l.flag&FCALLER != 0 {
+		field := &Field{
+			Key:   "caller",
+			Value: caller,
+		}
+		fields = append(fields, field)
+	}
+
+	field := &Field{
+		Key:   "level",
+		Value: level,
+	}
+	fields = append(fields, field)
+
+	return fields
+}
+
+func parseLogFields(p int, l *Logger, f string, kv ...interface{}) []*Field {
+
+	var fields []*Field
+
+	switch p {
+	case PRINT:
+		field := &Field{
+			Key:   "msg",
+			Value: fmt.Sprint(kv...),
+		}
+		fields = append(fields, field)
+		break
+	case PRINTF:
+		field := &Field{
+			Key:   "msg",
+			Value: fmt.Sprintf(f, kv...),
+		}
+		fields = append(fields, field)
+		break
+	case PRINTLN:
+		field := &Field{
+			Key:   "msg",
+			Value: fmt.Sprintln(kv...),
+		}
+		fields = append(fields, field)
+
+	case PRINTW:
+		field := &Field{
+			Key:   "msg",
+			Value: f,
+		}
+		fields = append(fields, field)
+
+		if len(kv)%2 != 0 {
+			kv = append(kv, "missing")
+		}
+
+		// if no key/value fields, return line after print message
+
+		for i := 0; i < len(kv); i += 2 {
+			// cast 1st elem = key to string
+			k := cast.ToString(kv[i])
+			if k == "" {
+				k = "missing"
+			}
+
+			// cast 2nd elem = value
+			field := &Field{
+				Key:   k,
+				Value: kv[i+1],
+			}
+			fields = append(fields, field)
+		}
+		break
+	}
+
+	return fields
+}
+
+func getField(key string, fields []*Field) *Field {
+	for _, f := range fields {
+		if f.Key == key {
+			return f
+		}
+	}
+
+	return nil
+}
+
+func printw(l *Logger, level int, prefix string, ct *color.Color, fields []*Field) {
 	var pairs []interface{}
 	var format string
 	var message string
 
 	output := l.levels[level].output
-	kv := keyvals
+	dupFields := fields
 
+	msg := cast.ToString(getField("msg", dupFields).Value)
 	if l.flag&FFULLSTRUCTUREDLOG != 0 {
 		message = ct.SprintFunc()("msg=") + quoteString(msg)
 		format += "%s %s "
@@ -608,36 +732,33 @@ func printw(l *Logger, level int, prefix string, ct *color.Color, msg string, ke
 
 	pairs = append(pairs, prefix, message)
 
-	if len(kv)%2 != 0 {
-		kv = append(kv, "missing")
-	}
+	// Delete msg once used
+	dupFields = append(dupFields[:0], dupFields[1:]...)
 
 	// if no key/value fields, return line after print message
-	if len(kv) <= 0 {
+	if len(dupFields) <= 0 {
 		format += "\n"
 	} else {
-		for i := 0; i < len(kv); i += 2 {
-			// cast 1st elem = key to string
-			k := cast.ToString(kv[i])
-			if k == "" {
-				k = "missing"
-			}
-			k = ct.SprintFunc()(k)
 
-			// cast 2nd elem = value
-			v := kv[i+1]
+		// Tip to keep order while parsing fields
+		for i, field := range dupFields {
+			// key
+			k := field.Key
+
+			// value
+			v := field.Value
 			pair := ""
 			kind := reflect.ValueOf(v).Kind()
-
 			if kind == reflect.Array || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct || kind == reflect.Ptr {
 				pair = fmt.Sprintf("%s=%+v", ct.SprintFunc()(k), v)
 			} else {
 				s := cast.ToString(v)
 				pair = fmt.Sprintf("%s=%s", ct.SprintFunc()(k), quoteString(s))
 			}
+
 			//pair = fmt.Sprintf("%s=%+v", k, v)
 			pairs = append(pairs, pair)
-			if i != len(kv)-2 {
+			if i < len(dupFields)-1 {
 				format += "%s "
 			} else {
 				format += "%s\n"
@@ -648,22 +769,12 @@ func printw(l *Logger, level int, prefix string, ct *color.Color, msg string, ke
 	fmt.Fprintf(output, format, pairs...)
 }
 
-func quoteString(str string) string {
-	s := str
-	if strings.Contains(s, " ") {
-		s = "\"" + s + "\""
-	}
-
-	return s
-}
-
-func formatPrefix(l *Logger, level int, caller string, cf *color.Color) string {
-	var ts string
+func formatPrefix(l *Logger, cf *color.Color, fields []*Field) string {
 	var format string
 	var values []interface{}
 
 	if l.flag&FTIMESTAMP != 0 {
-		ts = getTimeNow(l.timeFormat)
+		ts := cast.ToTime(getField("ts", fields).Value).Format(l.timeFormat)
 		format += "%s "
 		if l.flag&FFULLSTRUCTUREDLOG != 0 {
 			values = append(values, "ts="+ts)
@@ -673,6 +784,7 @@ func formatPrefix(l *Logger, level int, caller string, cf *color.Color) string {
 	}
 
 	if l.flag&FCALLER != 0 {
+		caller := cast.ToString(getField("caller", fields).Value)
 		format += "%s "
 		if l.flag&FFULLSTRUCTUREDLOG != 0 {
 			values = append(values, "caller="+caller)
@@ -681,6 +793,7 @@ func formatPrefix(l *Logger, level int, caller string, cf *color.Color) string {
 		}
 	}
 
+	level := cast.ToInt(getField("level", fields).Value)
 	if l.flag&FFULLSTRUCTUREDLOG != 0 {
 		format += "%s"
 		values = append(values, "level="+cf.SprintFunc()(prefixes[level]))
