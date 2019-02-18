@@ -106,6 +106,18 @@ type Fields struct {
 	Log    []*Field
 }
 
+// Field defines a log field in case of structured log
+type Field struct {
+	Key   string
+	Value interface{}
+}
+
+// Fields stores all log fields: prefix, static and user log
+type Fields struct {
+	Prefix []*Field
+	Log    []*Field
+}
+
 var defaultLogger *Logger
 
 // Init a default logger with verbose = 3 and
