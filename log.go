@@ -97,19 +97,7 @@ type Handler interface {
 // Field defines a log field in case of structured log
 type Field struct {
 	Key   string
-	Value interface{}
-}
-
-// Fields stores all log fields: prefix, static and user log
-type Fields struct {
-	Prefix []*Field
-	Log    []*Field
-}
-
-// Field defines a log field in case of structured log
-type Field struct {
-	Key   string
-	Value interface{}
+	Value string
 }
 
 // Fields stores all log fields: prefix, static and user log
@@ -641,7 +629,7 @@ func parsePrefixFields(l *Logger, level int, caller string) []*Field {
 	if l.flag&FTIMESTAMP != 0 {
 		field := &Field{
 			Key:   "ts",
-			Value: time.Now(),
+			Value: time.Now().Format(l.timeFormat),
 		}
 		fields = append(fields, field)
 	}
@@ -656,7 +644,7 @@ func parsePrefixFields(l *Logger, level int, caller string) []*Field {
 
 	field := &Field{
 		Key:   "level",
-		Value: level,
+		Value: cast.ToString(level),
 	}
 	fields = append(fields, field)
 
@@ -710,9 +698,18 @@ func parseLogFields(p int, l *Logger, f string, kv ...interface{}) []*Field {
 			}
 
 			// cast 2nd elem = value
+			var val string
+			v := kv[i+1]
+			kind := reflect.ValueOf(v).Kind()
+			if kind == reflect.Array || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct || kind == reflect.Ptr {
+				val = fmt.Sprintf("%+v", v)
+			} else {
+				s := cast.ToString(v)
+				val = quoteString(s)
+			}
 			field := &Field{
 				Key:   k,
-				Value: kv[i+1],
+				Value: val,
 			}
 			fields = append(fields, field)
 		}
@@ -767,13 +764,7 @@ func printw(l *Logger, level int, prefix string, ct *color.Color, fields []*Fiel
 			// value
 			v := field.Value
 			pair := ""
-			kind := reflect.ValueOf(v).Kind()
-			if kind == reflect.Array || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct || kind == reflect.Ptr {
-				pair = fmt.Sprintf("%s=%+v", ct.SprintFunc()(k), v)
-			} else {
-				s := cast.ToString(v)
-				pair = fmt.Sprintf("%s=%s", ct.SprintFunc()(k), quoteString(s))
-			}
+			pair = fmt.Sprintf("%s=%s", ct.SprintFunc()(k), v)
 
 			//pair = fmt.Sprintf("%s=%+v", k, v)
 			pairs = append(pairs, pair)
