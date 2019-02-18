@@ -673,7 +673,7 @@ func parseLogFields(p int, l *Logger, f string, kv ...interface{}) []*Field {
 	case PRINTLN:
 		field := &Field{
 			Key:   "msg",
-			Value: fmt.Sprintln(kv...),
+			Value: fmt.Sprint(kv...),
 		}
 		fields = append(fields, field)
 
