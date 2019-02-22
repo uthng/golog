@@ -29,6 +29,10 @@
   name = "github.com/fatih/color"
   version = "1.7.0"
 
+[[constraint]]
+  name = "github.com/uthng/slack"
+  branch = "webhook-runtime-customizations"
+
 [prune]
   go-tests = true
   unused-packages = true

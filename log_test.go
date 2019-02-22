@@ -75,7 +75,7 @@ func TestSimpleLog(t *testing.T) {
 			logger.Errorln("This is error log")
 
 			if logger.GetVerbosity() != golog.NONE {
-				str := utils.StripAnsi(buf.String())
+				str := utils.StringStripAnsi(buf.String())
 				arr := strings.Split(str, "\n\n")
 				for idx, w := range tc.output {
 					matched, _ := regexp.MatchString(w, arr[idx])
@@ -157,7 +157,7 @@ func TestFormattedLog(t *testing.T) {
 			if logger.GetVerbosity() != golog.NONE {
 				arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
 				for idx, w := range tc.output {
-					msg := utils.StripAnsi(string(arr[idx]))
+					msg := utils.StringStripAnsi(string(arr[idx]))
 					matched, _ := regexp.MatchString(w, msg)
 					if !matched {
 						t.Errorf("\nwant:\n%s\nhave:\n%s", w, msg)
@@ -234,7 +234,7 @@ func TestLogColor(t *testing.T) {
 			b := bytes.TrimRight(buf.Bytes(), "\n\n")
 			msg := string(b)
 			if tc.color {
-				msg = utils.StripAnsi(msg)
+				msg = utils.StringStripAnsi(msg)
 			}
 			matched, _ := regexp.MatchString(tc.output, msg)
 			if !matched {
@@ -297,7 +297,7 @@ func TestLogColorAll(t *testing.T) {
 			for idx, w := range tc.output {
 				msg := string(arr[idx])
 				if tc.color {
-					msg = utils.StripAnsi(msg)
+					msg = utils.StringStripAnsi(msg)
 				}
 				matched, _ := regexp.MatchString(w, msg)
 				if !matched {
@@ -335,7 +335,7 @@ func TestLogDefault(t *testing.T) {
 
 			b := bytes.TrimRight(buf.Bytes(), "\n\n")
 			msg := string(b)
-			msg = utils.StripAnsi(msg)
+			msg = utils.StringStripAnsi(msg)
 
 			matched, _ := regexp.MatchString(tc.output, msg)
 			if !matched {
@@ -370,7 +370,7 @@ func TestLogCaller(t *testing.T) {
 	arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
 	for idx, w := range output {
 		msg := string(arr[idx])
-		msg = utils.StripAnsi(msg)
+		msg = utils.StringStripAnsi(msg)
 
 		matched, _ := regexp.MatchString(w, msg)
 		if !matched {
@@ -427,7 +427,7 @@ func TestLogWith(t *testing.T) {
 			arr := bytes.Split(bytes.TrimRight(buf.Bytes(), "\n\n"), []byte("\n"))
 			for idx, w := range tc.output {
 				msg := string(arr[idx])
-				msg = utils.StripAnsi(msg)
+				msg = utils.StringStripAnsi(msg)
 
 				matched, _ := regexp.MatchString(w, msg)
 				if !matched {

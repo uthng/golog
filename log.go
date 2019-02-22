@@ -91,7 +91,7 @@ type Logger struct {
 
 // Handler defines an interface for golog handler
 type Handler interface {
-	PrintMsg(p int, l *Logger, level int, caller string, f string, v ...interface{}) error
+	PrintMsg(p int, l *Logger, level int, fields Fields) error
 }
 
 // Field defines a log field in case of structured log
@@ -230,6 +230,11 @@ func (l *Logger) EnableLogFormat() {
 func (l *Logger) DisableLogFormat() {
 	l.DisableColor()
 	l.logFormat = false
+}
+
+// AddHandler add a new handler in the handler list
+func (l *Logger) AddHandler(h Handler) {
+	l.handlers = append(l.handlers, h)
 }
 
 // Debug logs with debug level
@@ -423,6 +428,11 @@ func DisableLogFormat() {
 	defaultLogger.logFormat = false
 }
 
+// AddHandler add a new handler in the handler list
+func AddHandler(h Handler) {
+	defaultLogger.handlers = append(defaultLogger.handlers, h)
+}
+
 // Debug logs with debug level
 func Debug(v ...interface{}) {
 	Log(PRINT, defaultLogger, DEBUG, "", v...)
@@ -543,6 +553,10 @@ func Log(p int, l *Logger, level int, f string, v ...interface{}) {
 	printMsg(p, l, level, fields)
 
 	defer mutex.Unlock()
+
+	for _, h := range l.handlers {
+		h.PrintMsg(p, l, level, fields)
+	}
 }
 
 func printMsg(p int, l *Logger, level int, fields Fields) {
