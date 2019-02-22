@@ -34,20 +34,17 @@
   version = "v0.0.9"
 
 [[projects]]
-  digest = "1:0981502f9816113c9c8c4ac301583841855c8cf4da8c72f696b3ebedf6d0e4e5"
+  digest = "1:b5cf82c3199c040b82e2bb3fbcbcf6771c2759f9c6b839621b0714c822167581"
   name = "github.com/mattn/go-isatty"
   packages = ["."]
   pruneopts = "UT"
-  revision = "6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c"
-  version = "v0.0.4"
+  revision = "a6dda38a851a575e6799957cdd53ffe0b3fdd90f"
+  version = "v0.0.5"
 
 [[projects]]
-  digest = "1:7711bc85fa91b919713feda232ffe0bd4ebb0e8426b9c0de6c6f476e0eb9b7c2"
+  digest = "1:2487a7d6c9623edd9d79edada3a1e5c14b076e540ce0266321827cdd3a4837bd"
   name = "github.com/nlopes/slack"
-  packages = [
-    ".",
-    "slackutilsx",
-  ]
+  packages = ["slackutilsx"]
   pruneopts = "UT"
   revision = "a7deeca7935c178aa865249bab511daf816288ba"
   version = "v0.5.0"
@@ -86,29 +83,37 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:dc54e381cd3ecdfc4f344debccbdff15caec39947e86c15887adba8b74e1a3cf"
+  digest = "1:ac8331b9f675ee8f40ebd808571fe51c1041ccdef975964664658e2926c7ef10"
   name = "github.com/uthng/goutils"
   packages = ["."]
   pruneopts = "UT"
-  revision = "aa8e527e91d5e19c27654e2b390ce11e4e4573a3"
+  revision = "6434859d02e9decc8c9d63bbdbdd050b04b631e3"
+
+[[projects]]
+  branch = "webhook-runtime-customizations"
+  digest = "1:c55668aaaa8aeecb544b26b1610655e7f1abb9858a50e039d5b5933e739f4724"
+  name = "github.com/uthng/slack"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "90384cf38ecf1c8654f939648d939c069f8fcc29"
 
 [[projects]]
   branch = "master"
-  digest = "1:7ba061af4131fb44b30448572acd0d6fefbf63a61b97b7ef1dea0be5871c2742"
+  digest = "1:d0e9a312c4610a508569ab25e54d34600b1a96d19b1866ece104ffdf1c1b9d2c"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "66b7b1311ac80bbafcd2daeef9a5e6e2cd1e2399"
+  revision = "cd391775e71e684db52b63df9affd58269495083"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "github.com/fatih/color",
-    "github.com/nlopes/slack",
     "github.com/spf13/cast",
     "github.com/stretchr/testify/assert",
     "github.com/uthng/goutils",
+    "github.com/uthng/slack",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

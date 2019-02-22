@@ -3,9 +3,10 @@ package slack
 import (
 	"fmt"
 	"sync"
-	"time"
+	//"time"
 
-	"github.com/nlopes/slack"
+	"github.com/spf13/cast"
+	"github.com/uthng/slack"
 
 	log "github.com/uthng/golog"
 )
@@ -14,9 +15,12 @@ import (
 type handler struct {
 	verbose int
 
-	token    string
-	channel  string
-	msgTitle string
+	token     string
+	username  string
+	iconEmoji string
+	iconURL   string
+	channel   string
+	msgTitle  string
 
 	mutex sync.Mutex
 }
@@ -32,84 +36,49 @@ var colors = map[int]string{
 	log.DEBUG: "#fffff",
 }
 
+// New creates a new slack handler
+func New(token, username, iconEmoji, iconURL, channel, msgTitle string, verbose int) log.Handler {
+	s := &handler{
+		verbose:   verbose,
+		token:     token,
+		username:  username,
+		iconEmoji: iconEmoji,
+		iconURL:   iconURL,
+		channel:   channel,
+		msgTitle:  msgTitle,
+	}
+
+	return s
+}
+
 // PrintMsg formats messages to post to slack channel
 // according to logger informations
-func (h *handler) PrintMsg(p int, l *log.Logger, level int, caller string, f string, v ...interface{}) error {
+func (h *handler) PrintMsg(p int, l *log.Logger, level int, fields log.Fields) error {
 
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
 	if h.verbose >= level {
 		//color := colors[level]
-
 		switch p {
 		case log.PRINT, log.PRINTF, log.PRINTLN:
-			h.postWebhook(l, level, caller, f, v...)
+			return h.printWebhook(level, fields)
 		case log.PRINTW:
-			//printw(l, level, prefix, ct, f, v...)
-		default:
+			break
 		}
 	}
 
 	return nil
 }
 
-func (h *handler) buildPrefixFields(l *log.Logger, level int, caller string) []interface{} {
-	var kv []interface{}
-
-	if l.flag&FTIMESTAMP != 0 {
-		ts = time.Now().Format(l.timeFormat)
-		kv = append(kv, "ts="+ts)
+func (h *handler) printWebhook(level int, fields log.Fields) error {
+	webhookMsg := &slack.WebhookMessage{
+		Username:  h.username,
+		IconEmoji: h.iconEmoji,
+		IconURL:   h.iconURL,
+		Channel:   h.channel,
 	}
 
-	if l.flag&FCALLER != 0 {
-		kv = append(kv, "caller="+caller)
-	}
-
-	return kv
-}
-
-//func (h *handler) buildLogFields(l *log.Logger, level int, v... interface{}) []interface{} {
-//var pairs []interface{}
-
-//kv := v
-
-//if len(kv)%2 != 0 {
-//kv = append(kv, "missing")
-//}
-
-//// if no key/value fields, return line after print message
-//for i := 0; i < len(kv); i += 2 {
-//// cast 1st elem = key to string
-//k := cast.ToString(kv[i])
-//if k == "" {
-//k = "missing"
-//}
-//k = ct.SprintFunc()(k)
-
-//// cast 2nd elem = value
-//v := kv[i+1]
-//pair := ""
-//kind := reflect.ValueOf(v).Kind()
-
-//if kind == reflect.Array || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Struct || kind == reflect.Ptr {
-//pair = fmt.Sprintf("%s=%+v", ct.SprintFunc()(k), v)
-//} else {
-//s := cast.ToString(v)
-//pair = fmt.Sprintf("%s=%s", ct.SprintFunc()(k), quoteString(s))
-//}
-////pair = fmt.Sprintf("%s=%+v", k, v)
-//pairs = append(pairs, pair)
-//if i != len(kv)-2 {
-//format += "%s "
-//} else {
-//format += "%s\n"
-//}
-//}
-//}
-
-func (h *handler) postWebhook(level int, kv ...interface{}) error {
-	webhookMsg := &slack.WebhookMessage{}
 	attachment := slack.Attachment{}
 
 	if h.msgTitle != "" {
@@ -118,6 +87,18 @@ func (h *handler) postWebhook(level int, kv ...interface{}) error {
 
 	attachment.Color = colors[level]
 	attachment.MarkdownIn = append(attachment.MarkdownIn, "text", "fields")
+
+	var prefix string
+	for _, p := range fields.Prefix {
+		prefix = prefix + cast.ToString(p.Value) + " "
+	}
+
+	var message string
+	message = fmt.Sprint(fields.Log[0].Value)
+
+	attachment.Text = prefix + message
+
+	webhookMsg.Attachments = append(webhookMsg.Attachments, attachment)
 
 	return slack.PostWebhook(slackWebhookURL+h.token, webhookMsg)
 }
