@@ -749,9 +749,8 @@ func printw(l *Logger, level int, prefix string, ct *color.Color, fields []*Fiel
 	var message string
 
 	output := l.levels[level].output
-	dupFields := fields
 
-	msg := cast.ToString(getField("msg", dupFields).Value)
+	msg := cast.ToString(getField("msg", fields).Value)
 	if l.flag&FFULLSTRUCTUREDLOG != 0 {
 		message = ct.SprintFunc()("msg=") + quoteString(msg)
 		format += "%s %s "
@@ -763,7 +762,7 @@ func printw(l *Logger, level int, prefix string, ct *color.Color, fields []*Fiel
 	pairs = append(pairs, prefix, message)
 
 	// Delete msg once used
-	dupFields = append(dupFields[:0], dupFields[1:]...)
+	dupFields := append([]*Field{}, fields[1:]...)
 
 	// if no key/value fields, return line after print message
 	if len(dupFields) <= 0 {
