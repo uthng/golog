@@ -68,7 +68,7 @@ var colors = map[int][]color.Attribute{
 	DEBUG: []color.Attribute{color.FgWhite},
 }
 
-var mutex sync.Mutex
+var mutex Mutex
 var wg sync.WaitGroup
 
 type level struct {
@@ -148,6 +148,9 @@ func NewLogger() *Logger {
 // SetVerbosity sets log level. If verbose < NONE, it will be set to NONE.
 // If verbose > DEBUG, it will be set to DEBUG
 func (l *Logger) SetVerbosity(v int) {
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
+
 	if v < NONE {
 		l.verbose = NONE
 	} else if v > DEBUG {
@@ -164,6 +167,9 @@ func (l *Logger) GetVerbosity() int {
 
 // SetOutput sets output destination for a specific level
 func (l *Logger) SetOutput(w io.Writer) {
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
+
 	for i := FATAL; i <= DEBUG; i++ {
 		l.levels[i].output = w
 	}
@@ -171,24 +177,40 @@ func (l *Logger) SetOutput(w io.Writer) {
 
 // SetLevelOutput sets output destination for a specific level
 func (l *Logger) SetLevelOutput(level int, w io.Writer) {
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
+
 	l.levels[level].output = w
 }
 
 // SetFlags sets flags for message log output
 func (l *Logger) SetFlags(flag int) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
 
 	l.flag = flag
 }
 
+// GetFlags gets flags for message log output
+func (l *Logger) GetFlags() int {
+	return l.flag
+}
+
 // SetTimeFormat sets timestamp with the given format
 func (l *Logger) SetTimeFormat(format string) {
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
+
 	l.timeFormat = format
 }
 
 // EnableColor enables color for all log levels
 func (l *Logger) EnableColor() {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	for i := FATAL; i <= DEBUG; i++ {
 		l.EnableLevelColor(i)
 	}
@@ -196,6 +218,11 @@ func (l *Logger) EnableColor() {
 
 // DisableColor disables color for all log levels
 func (l *Logger) DisableColor() {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	for i := FATAL; i <= DEBUG; i++ {
 		l.DisableLevelColor(i)
 	}
@@ -203,6 +230,11 @@ func (l *Logger) DisableColor() {
 
 // EnableLevelColor enables color for a specific level
 func (l *Logger) EnableLevelColor(level int) {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	l.levels[level].color = true
 	cf := l.levels[level].colorPrefix
 	cf.EnableColor()
@@ -211,6 +243,11 @@ func (l *Logger) EnableLevelColor(level int) {
 
 // DisableLevelColor enables color for a specific level
 func (l *Logger) DisableLevelColor(level int) {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	l.levels[level].color = false
 	cf := l.levels[level].colorPrefix
 	cf.DisableColor()
@@ -220,6 +257,11 @@ func (l *Logger) DisableLevelColor(level int) {
 // EnableLogFormat enables format log of message.
 // It will print msg as a log with color or prefix etc.
 func (l *Logger) EnableLogFormat() {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	l.EnableColor()
 	l.logFormat = true
 }
@@ -228,12 +270,20 @@ func (l *Logger) EnableLogFormat() {
 // It will print unformatted msg as normally like with any function printf
 // without color or prefix etc.
 func (l *Logger) DisableLogFormat() {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	l.DisableColor()
 	l.logFormat = false
 }
 
 // AddHandler add a new handler in the handler list
 func (l *Logger) AddHandler(h Handler) {
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
+
 	l.handlers = append(l.handlers, h)
 }
 
@@ -345,6 +395,9 @@ func (l *Logger) Fatalw(msg string, v ...interface{}) {
 // SetVerbosity sets log level. If verbose < NONE, it will be set to NONE.
 // If verbose > DEBUG, it will be set to DEBUG
 func SetVerbosity(v int) {
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
+
 	if v < NONE {
 		defaultLogger.verbose = NONE
 	} else if v > DEBUG {
@@ -361,6 +414,9 @@ func GetVerbosity() int {
 
 // SetOutput sets output destination for a specific level
 func SetOutput(w io.Writer) {
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
+
 	for i := FATAL; i <= DEBUG; i++ {
 		defaultLogger.levels[i].output = w
 	}
@@ -368,24 +424,40 @@ func SetOutput(w io.Writer) {
 
 // SetLevelOutput sets output destination for a specific level
 func SetLevelOutput(level int, w io.Writer) {
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
+
 	defaultLogger.levels[level].output = w
 }
 
 // SetFlags sets flags for message log output
 func SetFlags(flag int) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
 
 	defaultLogger.flag = flag
 }
 
+// GetFlags gets flags for message log output
+func GetFlags() int {
+	return defaultLogger.flag
+}
+
 // SetTimeFormat sets timestamp with the given format
 func SetTimeFormat(format string) {
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
+
 	defaultLogger.timeFormat = format
 }
 
 // EnableColor enables color for all log levels
 func EnableColor() {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	for i := FATAL; i <= DEBUG; i++ {
 		defaultLogger.EnableLevelColor(i)
 	}
@@ -393,6 +465,11 @@ func EnableColor() {
 
 // DisableColor disables color for all log levels
 func DisableColor() {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	for i := FATAL; i <= DEBUG; i++ {
 		defaultLogger.DisableLevelColor(i)
 	}
@@ -400,6 +477,11 @@ func DisableColor() {
 
 // EnableLevelColor enables color for a specific level
 func EnableLevelColor(level int) {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	defaultLogger.levels[level].color = true
 	cf := defaultLogger.levels[level].colorPrefix
 	cf.EnableColor()
@@ -408,6 +490,11 @@ func EnableLevelColor(level int) {
 
 // DisableLevelColor enables color for a specific level
 func DisableLevelColor(level int) {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	defaultLogger.levels[level].color = false
 	cf := defaultLogger.levels[level].colorPrefix
 	cf.DisableColor()
@@ -416,6 +503,11 @@ func DisableLevelColor(level int) {
 // EnableLogFormat enables format log of message.
 // It will print msg as a log with color or prefix etc.
 func EnableLogFormat() {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	EnableColor()
 	defaultLogger.logFormat = true
 }
@@ -424,12 +516,20 @@ func EnableLogFormat() {
 // It will print unformatted msg as normally like with any function printf
 // without color or prefix etc.
 func DisableLogFormat() {
+	if !mutex.IsLocked() {
+		mutex.LockOnce()
+		defer mutex.UnlockOnce()
+	}
+
 	DisableColor()
 	defaultLogger.logFormat = false
 }
 
 // AddHandler add a new handler in the handler list
 func AddHandler(h Handler) {
+	mutex.LockOnce()
+	defer mutex.UnlockOnce()
+
 	defaultLogger.handlers = append(defaultLogger.handlers, h)
 }
 
@@ -542,7 +642,7 @@ func Fatalw(msg string, v ...interface{}) {
 // Log wraps print function but using goroutine and waitgroup
 // to have a synchronization of logs.
 func Log(p int, l *Logger, level int, f string, v ...interface{}) {
-	mutex.Lock()
+	mutex.LockOnce()
 
 	caller := getInfoCaller()
 	fields := Fields{}
@@ -552,7 +652,7 @@ func Log(p int, l *Logger, level int, f string, v ...interface{}) {
 
 	printMsg(p, l, level, fields)
 
-	defer mutex.Unlock()
+	defer mutex.UnlockOnce()
 
 	for _, h := range l.handlers {
 		h.PrintMsg(p, l, level, fields)
