@@ -16,17 +16,15 @@ import (
 type handler struct {
 	verbose int
 
-	token     string
-	username  string
-	iconEmoji string
-	iconURL   string
-	channel   string
-	title     string
+	webhookURL string
+	username   string
+	iconEmoji  string
+	iconURL    string
+	channel    string
+	title      string
 
 	mutex sync.Mutex
 }
-
-var slackWebhookURL = "https://hooks.slack.com/services/"
 
 // Color Map following levels
 var colors = map[int]string{
@@ -38,15 +36,15 @@ var colors = map[int]string{
 }
 
 // New creates a new slack handler
-func New(token, username, iconEmoji, iconURL, channel, title string, verbose int) log.Handler {
+func New(webhookURL, username, iconEmoji, iconURL, channel, title string, verbose int) log.Handler {
 	s := &handler{
-		verbose:   verbose,
-		token:     token,
-		username:  username,
-		iconEmoji: iconEmoji,
-		iconURL:   iconURL,
-		channel:   channel,
-		title:     title,
+		verbose:    verbose,
+		webhookURL: webhookURL,
+		username:   username,
+		iconEmoji:  iconEmoji,
+		iconURL:    iconURL,
+		channel:    channel,
+		title:      title,
 	}
 
 	return s
@@ -99,7 +97,7 @@ func (h *handler) printWebhook(level int, fields log.Fields) error {
 
 	attachment.Text = prefix + message
 
-	return slack.PostWebhook(slackWebhookURL+h.token, webhookMsg)
+	return slack.PostWebhook(h.webhookURL, webhookMsg)
 }
 
 func (h *handler) printwWebhook(level int, fields log.Fields, full bool) error {
@@ -129,7 +127,7 @@ func (h *handler) printwWebhook(level int, fields log.Fields, full bool) error {
 		attachment.Fields = append(attachment.Fields, field)
 	}
 
-	return slack.PostWebhook(slackWebhookURL+h.token, webhookMsg)
+	return slack.PostWebhook(h.webhookURL, webhookMsg)
 }
 
 func initWebhookMessage(h *handler, level int) *slack.WebhookMessage {
