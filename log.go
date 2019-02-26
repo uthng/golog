@@ -693,7 +693,7 @@ func printMsg(p int, l *Logger, level int, fields Fields) {
 			}
 		case PRINTLN:
 			if l.logFormat {
-				fmt.Fprintln(l.levels[level].output, prefix, ct.SprintlnFunc()(msg))
+				fmt.Fprintln(l.levels[level].output, prefix, ct.SprintFunc()(msg))
 			} else {
 				fmt.Fprintln(l.levels[level].output, ct.SprintlnFunc()(msg))
 			}
@@ -787,7 +787,7 @@ func parseLogFields(p int, l *Logger, f string, kv ...interface{}) []*Field {
 	case PRINTLN:
 		field := &Field{
 			Key:   "msg",
-			Value: fmt.Sprint(kv...),
+			Value: fmt.Sprintln(kv...),
 		}
 		fields = append(fields, field)
 
