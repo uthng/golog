@@ -655,7 +655,13 @@ func Log(p int, l *Logger, level int, f string, v ...interface{}) {
 	defer mutex.UnlockOnce()
 
 	for _, h := range l.handlers {
-		h.PrintMsg(p, l, level, fields)
+		err := h.PrintMsg(p, l, level, fields)
+		if err != nil {
+			f := Fields{}
+			f.Prefix = parsePrefixFields(l, ERROR, caller)
+			f.Log = parseLogFields(PRINTW, l, "Failed to print message in handler", "err", err)
+			printMsg(PRINTW, l, ERROR, f)
+		}
 	}
 }
 
