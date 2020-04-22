@@ -823,11 +823,10 @@ func parseLogFields(p int, l *Logger, f string, kv ...interface{}) []*Field {
 			kind := reflect.ValueOf(v).Kind()
 			if kind == reflect.Map || kind == reflect.Struct || kind == reflect.Ptr {
 				val = fmt.Sprintf("%+v", v)
-			} else if kind == reflect.Array || kind == reflect.Slice {
+			} else if kind == reflect.String || kind == reflect.Array || kind == reflect.Slice {
 				val = fmt.Sprintf("%q", v)
 			} else {
-				s := cast.ToString(v)
-				val = quoteString(s)
+				val = fmt.Sprintf("%v", v)
 			}
 			field := &Field{
 				Key:   k,
